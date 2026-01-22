@@ -65,10 +65,10 @@ layout: default
 </style>
 
 <p align="center">
-  <img src="assets/banner-dark.svg" alt="VEXOR banner" width="100%">
+  <img src="assets/banner-dark.svg" alt="VRAXION banner" width="100%">
 </p>
 
-# VEXOR™
+# VRAXION™
 **Phase‑Recurring Infinite Manifold Engine**  
 Pointer‑driven recurrent memory on a continuous circular manifold (ring buffer), focused on seam‑safe learning and stability on closed loops.
 
@@ -77,10 +77,10 @@ Pointer‑driven recurrent memory on a continuous circular manifold (ring buffer
 ---
 
 ## Founder note 👋
-Hi — I’m **Daniel Kenessy**. I’m **31** and based in **Slovakia**. VEXOR™ is my working title for this line of research (mark filing intended; not yet registered).  
+Hi — I’m **Daniel Kenessy**. I’m **31** and based in **Slovakia**. VRAXION™ is my working title for this line of research (mark filing intended; not yet registered).  
 I build experimental systems at the edges: ideas that look strange on paper until you can run them, graph them, and break them.
 
-I’ve always trusted two things: **intuition** and **mechanics**. VEXOR is me trying to turn that intuition into something you can inspect, reproduce, and improve — with the long‑term goal of making advanced AI **cheaper, more accessible, and more useful than “just a chatbot.”**
+I’ve always trusted two things: **intuition** and **mechanics**. VRAXION is me trying to turn that intuition into something you can inspect, reproduce, and improve — with the long‑term goal of making advanced AI **cheaper, more accessible, and more useful than “just a chatbot.”**
 
 ---
 
@@ -93,8 +93,8 @@ We want AI that runs as a **natural extension of the mind** — locally, private
 
 ---
 
-## What VEXOR is (today) 🧠🧵
-VEXOR is a recurrent neural memory architecture that navigates a continuous **1D circular manifold** (a ring buffer). It’s designed around a simple premise:
+## What VRAXION is (today) 🧠🧵
+VRAXION is a recurrent neural memory architecture that navigates a continuous **1D circular manifold** (a ring buffer). It’s designed around a simple premise:
 
 > If the model’s internal state can’t stay coherent while it moves across seams and loops, it can’t stay coherent while it thinks.
 
