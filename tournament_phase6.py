@@ -520,7 +520,8 @@ def apply_update_agc(model, grad_norm, raw_delta=None, step: int | None = None):
             scale *= AGC_SCALE_UP
         elif grad_norm > AGC_GRAD_HIGH:
             scale *= AGC_SCALE_DOWN
-    scale = max(AGC_SCALE_MIN, min(cap, scale))
+    # Allow true feathering: only clamp to the cap, keep a tiny floor to avoid zero.
+    scale = max(1e-6, min(cap, scale))
 
     # Use the strongest dwell signal we have for gating (captures brief locks).
     dwell_metric = max(current_dwell, max_dwell)
