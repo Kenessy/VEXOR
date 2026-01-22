@@ -1398,7 +1398,8 @@ def get_fsdd_loader():
 
 def get_seq_mnist_loader():
     SYNTH_META.clear()
-    if os.environ.get("TP6_SYNTH", "0") == "1":
+    synth_env = os.environ.get("TP6_SYNTH", "0").strip()
+    if synth_env == "1":
         synth_mode = SYNTH_MODE
         base_seq_len = max(1, int(SYNTH_LEN))
         SYNTH_META.update({"enabled": True, "mode": synth_mode, "synth_len": base_seq_len})
@@ -2649,8 +2650,16 @@ def main():
 
     summary = []
 
-    # Sequential MNIST (pixel-by-pixel 16x16 = 256 steps)
-    if RUN_MODE == "lockout":
+    # Synthetic short-circuit: if TP6_SYNTH=1, bypass MNIST entirely
+    synth_env = os.environ.get("TP6_SYNTH", "0").strip()
+    if synth_env == "1":
+        synth_loader, synth_classes, synth_collate = get_seq_mnist_loader()
+        synth_eval_loader, eval_size = build_eval_loader_from_subset(
+            synth_loader.dataset, input_collate=synth_collate
+        )
+        log_eval_overlap(synth_loader.dataset, synth_eval_loader.dataset, eval_size, "synth_subset")
+        summary.append(run_phase("synth", synth_loader, synth_eval_loader, input_dim=1, num_classes=synth_classes))
+    elif RUN_MODE == "lockout":
         summary.append(run_lockout_test())
     else:
         mnist_loader, mnist_classes, mnist_collate = get_seq_mnist_loader()
