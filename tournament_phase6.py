@@ -185,6 +185,8 @@ DWELL_INERTIA_THRESH = float(os.environ.get("TP6_DWELL_INERTIA_THRESH", "50.0"))
 WALK_PULSE_ENABLED = bool(int(os.environ.get("TP6_WALK_PULSE", "0")))
 WALK_PULSE_EVERY = int(os.environ.get("TP6_WALK_PULSE_EVERY", "50"))
 WALK_PULSE_VALUE = float(os.environ.get("TP6_WALK_PULSE_VALUE", "0.5"))
+SCALE_WARMUP_STEPS = int(os.environ.get("TP6_SCALE_WARMUP_STEPS", "0"))
+SCALE_WARMUP_INIT = float(os.environ.get("TP6_SCALE_WARMUP_INIT", "0.1"))
 SHARD_ENABLED = bool(int(os.environ.get("TP6_SHARD_BATCH", "0")))
 SHARD_SIZE = int(os.environ.get("TP6_SHARD_SIZE", "19"))
 SHARD_ADAPT = bool(int(os.environ.get("TP6_SHARD_ADAPT", "0")))
@@ -487,7 +489,7 @@ def _checkpoint_is_finite(loss_value, grad_norm_value, raw_delta_value) -> bool:
     return True
 
 
-def apply_update_agc(model, grad_norm, raw_delta=None):
+def apply_update_agc(model, grad_norm, raw_delta=None, step: int | None = None):
     # Dwell-aware speed control: allow search velocity, reward stability.
     dwell_brake_thresh = 20.0
     dwell_recover_thresh = 50.0
@@ -506,6 +508,11 @@ def apply_update_agc(model, grad_norm, raw_delta=None):
     if not math.isfinite(cap) or cap <= 0:
         cap = base_cap
     cap = max(AGC_SCALE_MIN, min(base_cap, cap))
+    # Optional warmup: start with reduced cap and ramp to base_cap.
+    if SCALE_WARMUP_STEPS > 0 and step is not None:
+        warmup_factor = min(1.0, max(0.0, float(step)) / float(SCALE_WARMUP_STEPS))
+        warmup_cap = base_cap * max(SCALE_WARMUP_INIT, warmup_factor)
+        cap = min(cap, max(AGC_SCALE_MIN, warmup_cap))
 
     scale = float(getattr(model, "update_scale", UPDATE_SCALE))
     if AGC_ENABLED and grad_norm is not None and math.isfinite(grad_norm):
@@ -2060,7 +2067,7 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
             if GRAD_CLIP > 0.0:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP)
             raw_delta = getattr(model, "ptr_delta_raw_mean", None)
-            apply_update_agc(model, grad_norm if hasattr(model, "theta_ptr_reduced") else None, raw_delta)
+            apply_update_agc(model, grad_norm if hasattr(model, "theta_ptr_reduced") else None, raw_delta, step=step)
             scaler.step(optimizer)
             scaler.update()
 
@@ -2451,7 +2458,7 @@ def train_steps(model, loader, steps, dataset_name, model_name):
         if GRAD_CLIP > 0.0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP)
         raw_delta = getattr(model, "ptr_delta_raw_mean", None)
-        apply_update_agc(model, grad_norm_step if hasattr(model, "theta_ptr_reduced") else None, raw_delta)
+        apply_update_agc(model, grad_norm_step if hasattr(model, "theta_ptr_reduced") else None, raw_delta, step=step)
         scaler.step(optimizer)
         scaler.update()
 
