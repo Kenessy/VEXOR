@@ -162,8 +162,7 @@ Commercial use requires a separate written license — see the repository’s `C
 ---
 
 ## Cite this work 🔖
-- Latest version DOI: https://doi.org/10.5281/zenodo.18332532  
-- Concept DOI (always resolves to latest): https://doi.org/10.5281/zenodo.18289891
+- DOI: https://doi.org/10.5281/zenodo.18332532
 
 ---
 

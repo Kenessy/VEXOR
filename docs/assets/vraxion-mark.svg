@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" aria-hidden="true">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c9ff6b"/>
+      <stop offset="1" stop-color="#7a5cff"/>
+    </linearGradient>
+    <filter id="s" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="108" height="108" rx="26" fill="#0b0d11" stroke="#ffffff" stroke-opacity="0.10"/>
+  <!-- topological ribbon -->
+  <path d="M34 64
+           C34 42, 52 30, 64 30
+           C76 30, 94 42, 94 64
+           C94 86, 76 98, 64 98
+           C52 98, 34 86, 34 64Z"
+        fill="none" stroke="url(#g)" stroke-width="9" stroke-linecap="round" filter="url(#s)"/>
+  <!-- twist stroke -->
+  <path d="M42 76 C52 66, 76 66, 86 52"
+        fill="none" stroke="#ffcc66" stroke-opacity="0.75" stroke-width="6" stroke-linecap="round"/>
+  <!-- axis tick -->
+  <path d="M64 20 V108" stroke="#ffffff" stroke-opacity="0.10" stroke-width="2"/>
+  <path d="M20 64 H108" stroke="#ffffff" stroke-opacity="0.10" stroke-width="2"/>
+  <circle cx="64" cy="64" r="4.5" fill="#eae6dc" fill-opacity="0.9"/>
+</svg>

@@ -290,17 +290,7 @@ body {
 .bottom-hud {
   border-bottom: none;
   border-top: 1px solid var(--dim);
-  justify-content: space-between;
-  align-items: center;
-}
-
-.bottom-hud a#btn-repo {
-  color: var(--blue);
-  text-decoration: none;
-}
-
-.bottom-hud a#btn-repo:hover {
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+  justify-content: center;
 }
 
 .menu-grid {
@@ -412,8 +402,9 @@ body {
   flex: 1;
   padding: 20px 40px;
   overflow-y: auto;
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.75;
+  color: rgba(243, 249, 255, 0.92);
 }
 
 .content-scroll h1 {
@@ -585,4 +576,79 @@ body {
   font-style: italic;
   opacity: 0.8;
   color: var(--white);
+}
+/* ---------- readability & utility ---------- */
+.hud-btn {
+  cursor: pointer;
+  color: var(--blue);
+  transition: color 120ms ease;
+  white-space: nowrap;
+}
+.hud-btn:hover {
+  color: var(--cyan);
+}
+
+.kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(0,0,0,0.45);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.micro {
+  font-size: 12px;
+  opacity: 0.82;
+}
+
+.content-scroll p {
+  margin: 0 0 10px;
+}
+.content-scroll ul {
+  margin: 8px 0 0 18px;
+  padding: 0;
+}
+.content-scroll li {
+  margin: 6px 0;
+}
+
+.fold {
+  margin-top: 10px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.35);
+}
+.fold summary {
+  cursor: pointer;
+  color: rgba(243,249,255,0.92);
+  letter-spacing: 1px;
+  font-size: 12px;
+}
+.fold summary:hover {
+  color: var(--cyan);
+}
+.fold[open] {
+  background: rgba(0,0,0,0.45);
+}
+
+body.mode-reader .scanlines {
+  opacity: 0.55;
+}
+body.mode-reader .vignette {
+  opacity: 0.18;
+}
+body.mode-reader .data-card {
+  background: rgba(0,0,0,0.58);
+}
+body.mode-reader .content-scroll {
+  text-shadow: 0 0 14px rgba(94,225,255,0.05);
+}
+
+@media (max-width: 560px) {
+  .content-scroll {
+    padding: 18px 18px;
+  }
 }

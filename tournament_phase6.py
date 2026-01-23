@@ -77,7 +77,7 @@ PTR_PHANTOM_READ = CFG.ptr_phantom_read
 SOFT_READOUT = CFG.soft_readout
 SOFT_READOUT_K = CFG.soft_readout_k
 SOFT_READOUT_TAU = CFG.soft_readout_tau
-PTR_VEL = CFG.ptr_vel
+PTR_VEL = bool(int(os.environ.get("TP6_PTR_VEL", str(int(CFG.ptr_vel)))))
 PTR_VEL_DECAY = CFG.ptr_vel_decay
 PTR_VEL_CAP = CFG.ptr_vel_cap
 PTR_VEL_SCALE = CFG.ptr_vel_scale
@@ -129,7 +129,7 @@ C13_P = CFG.c13_p
 DEBUG_NAN = CFG.debug_nan
 # Force per-step debug logging for live runs regardless of env flags.
 DEBUG_STATS = True
-DEBUG_EVERY = 1
+DEBUG_EVERY = int(os.environ.get("TP6_DEBUG_EVERY", "1"))
 PRECISION = CFG.precision
 DTYPE = CFG.dtype
 USE_AMP = CFG.use_amp
@@ -152,22 +152,23 @@ STATE_LOOP_METRICS = CFG.state_loop_metrics
 STATE_LOOP_EVERY = CFG.state_loop_every
 STATE_LOOP_SAMPLES = CFG.state_loop_samples
 STATE_LOOP_DIM = CFG.state_loop_dim
-GRAD_CLIP = CFG.grad_clip
+GRAD_CLIP = float(os.environ.get("TP6_GRAD_CLIP", str(CFG.grad_clip)))
 STATE_CLIP = CFG.state_clip
-STATE_DECAY = CFG.state_decay
-UPDATE_SCALE = CFG.update_scale
+STATE_DECAY = float(os.environ.get("TP6_STATE_DECAY", str(CFG.state_decay)))
+# Hardcode tiny update scale floor to kill the 0.1 ghost. (Now env/CFG driven.)
+UPDATE_SCALE = float(os.environ.get("TP6_UPDATE_SCALE", str(getattr(CFG, "update_scale", 0.0005))))
 AGC_ENABLED = CFG.agc_enabled
 AGC_GRAD_LOW = CFG.agc_grad_low
 AGC_GRAD_HIGH = CFG.agc_grad_high
-AGC_SCALE_UP = 1.05
-AGC_SCALE_DOWN = 0.5
-AGC_SCALE_MIN = CFG.agc_scale_min
-AGC_SCALE_MAX = CFG.agc_scale_max
-AGC_SCALE_MAX_MIN = getattr(CFG, "agc_scale_max_min", 1e-4)
-AGC_SCALE_MAX_DECAY = getattr(CFG, "agc_scale_max_decay", 0.3)
-AGC_PLATEAU_WINDOW = getattr(CFG, "agc_plateau_window", 0)
-AGC_PLATEAU_STD = getattr(CFG, "agc_plateau_std", 0.0)
-AGC_PLATEAU_MIN_STEPS = getattr(CFG, "agc_plateau_min_steps", 0)
+AGC_SCALE_UP = float(os.environ.get("TP6_SCALE_UP", str(getattr(CFG, "agc_scale_up", 1.05))))
+AGC_SCALE_DOWN = float(os.environ.get("TP6_SCALE_DOWN", str(getattr(CFG, "agc_scale_down", 0.5))))
+AGC_SCALE_MIN = float(os.environ.get("TP6_SCALE_MIN", str(getattr(CFG, "agc_scale_min", 0.0005))))
+AGC_SCALE_MAX = float(os.environ.get("TP6_SCALE_MAX", str(getattr(CFG, "agc_scale_max", 1.0))))
+AGC_SCALE_MAX_MIN = float(os.environ.get("TP6_SCALE_MAX_MIN", str(getattr(CFG, "agc_scale_max_min", 1e-4))))
+AGC_SCALE_MAX_DECAY = float(os.environ.get("TP6_SCALE_MAX_DECAY", str(getattr(CFG, "agc_scale_max_decay", 0.3))))
+AGC_PLATEAU_WINDOW = int(os.environ.get("TP6_AGC_PLATEAU_WINDOW", str(getattr(CFG, "agc_plateau_window", 0))))
+AGC_PLATEAU_STD = float(os.environ.get("TP6_AGC_PLATEAU_STD", str(getattr(CFG, "agc_plateau_std", 0.0))))
+AGC_PLATEAU_MIN_STEPS = int(os.environ.get("TP6_AGC_PLATEAU_MIN_STEPS", str(getattr(CFG, "agc_plateau_min_steps", 0))))
 SPEED_GOV_ENABLED = CFG.speed_gov_enabled
 SPEED_GOV_RHO = CFG.speed_gov_rho
 SPEED_GOV_L_MIN = CFG.speed_gov_l_min
@@ -180,21 +181,21 @@ INERTIA_MAX = CFG.ptr_inertia_max
 INERTIA_VEL_FULL = CFG.ptr_inertia_vel_full
 INERTIA_EMA = CFG.ptr_inertia_ema
 # Optional dwell-driven inertia (kinetic tempering)
-DWELL_INERTIA_ENABLED = bool(int(os.environ.get("TP6_DWELL_INERTIA", "0")))
+DWELL_INERTIA_ENABLED = bool(int(os.environ.get("TP6_DWELL_INERTIA", "1")))
 DWELL_INERTIA_THRESH = float(os.environ.get("TP6_DWELL_INERTIA_THRESH", "50.0"))
 WALK_PULSE_ENABLED = bool(int(os.environ.get("TP6_WALK_PULSE", "0")))
 WALK_PULSE_EVERY = int(os.environ.get("TP6_WALK_PULSE_EVERY", "50"))
 WALK_PULSE_VALUE = float(os.environ.get("TP6_WALK_PULSE_VALUE", "0.5"))
 SCALE_WARMUP_STEPS = int(os.environ.get("TP6_SCALE_WARMUP_STEPS", "0"))
 SCALE_WARMUP_INIT = float(os.environ.get("TP6_SCALE_WARMUP_INIT", str(UPDATE_SCALE)))
-SHARD_ENABLED = bool(int(os.environ.get("TP6_SHARD_BATCH", "0")))
+SHARD_ENABLED = bool(int(os.environ.get("TP6_SHARD_BATCH", "1")))
 SHARD_SIZE = int(os.environ.get("TP6_SHARD_SIZE", "19"))
-SHARD_ADAPT = bool(int(os.environ.get("TP6_SHARD_ADAPT", "0")))
+SHARD_ADAPT = bool(int(os.environ.get("TP6_SHARD_ADAPT", "1")))
 SHARD_ADAPT_EVERY = int(os.environ.get("TP6_SHARD_ADAPT_EVERY", "50"))
 SHARD_ADAPT_GRAD = float(os.environ.get("TP6_SHARD_ADAPT_GRAD", "10.0"))
 SHARD_ADAPT_DWELL = float(os.environ.get("TP6_SHARD_ADAPT_DWELL", "40.0"))
 SHARD_MIN_PER_SHARD = int(os.environ.get("TP6_SHARD_MIN_PER_SHARD", "1"))
-TRACTION_ENABLED = bool(int(os.environ.get("TP6_TRACTION_LOG", "0")))
+TRACTION_ENABLED = bool(int(os.environ.get("TP6_TRACTION_LOG", "1")))
 PTR_UPDATE_GOV_VEL_HIGH = getattr(CFG, "ptr_update_gov_vel_high", 0.5)
 LIVE_TRACE_PATH = CFG.live_trace_path
 RUN_MODE = CFG.run_mode
@@ -204,7 +205,7 @@ COLD_PTR_UPDATE_MIN = int(os.environ.get("TP6_COLD_PTR_UPDATE_MIN", PTR_UPDATE_E
 COLD_UPDATE_SCALE = float(os.environ.get("TP6_COLD_UPDATE_SCALE", UPDATE_SCALE))
 # Checkpoint / resume controls
 CHECKPOINT_PATH = CFG.checkpoint_path
-SAVE_EVERY_STEPS = CFG.save_every_steps
+SAVE_EVERY_STEPS = int(os.environ.get("TP6_SAVE_EVERY_STEPS", str(CFG.save_every_steps)))
 SAVE_HISTORY = CFG.save_history
 SAVE_LAST_GOOD = CFG.save_last_good
 SAVE_BAD = CFG.save_bad
@@ -308,6 +309,9 @@ def apply_thermostat(model, flip_rate: float, ema: float | None):
         ema = flip_rate
     else:
         ema = THERMO_EMA * ema + (1.0 - THERMO_EMA) * flip_rate
+    # Respect manual inertia override: do not mutate ptr_inertia/deadzone/walk.
+    if os.environ.get("TP6_PTR_INERTIA_OVERRIDE") is not None:
+        return ema
 
     if ema > THERMO_TARGET_FLIP:
         model.ptr_inertia = min(THERMO_INERTIA_MAX, model.ptr_inertia + THERMO_INERTIA_STEP)
@@ -490,103 +494,55 @@ def _checkpoint_is_finite(loss_value, grad_norm_value, raw_delta_value) -> bool:
 
 
 def apply_update_agc(model, grad_norm, raw_delta=None, step: int | None = None):
-    # Dwell-aware speed control: allow search velocity, reward stability.
-    dwell_brake_thresh = 20.0
-    dwell_recover_thresh = 50.0
-    current_dwell = getattr(model, "ptr_mean_dwell", 0.0)
-    max_dwell = getattr(model, "ptr_max_dwell", current_dwell)
-    try:
-        current_dwell = float(current_dwell)
-    except Exception:
-        current_dwell = 0.0
-    if not math.isfinite(current_dwell):
-        current_dwell = 0.0
-
-    # Dynamic cap that can shrink/relax; persists on model.
+    """
+    Surgical reset: single-floor AGC. No hidden clamps, no speed governor.
+    Rules:
+      * start from AGC_SCALE_MIN
+      * adjust up/down by grad_norm
+      * clamp to [AGC_SCALE_MIN, agc_scale_max/agc_scale_cap]
+    """
     base_cap = float(getattr(model, "agc_scale_max", AGC_SCALE_MAX))
     cap = float(getattr(model, "agc_scale_cap", base_cap))
     if not math.isfinite(cap) or cap <= 0:
         cap = base_cap
     cap = max(AGC_SCALE_MIN, min(base_cap, cap))
-    # Optional warmup: start with reduced cap and ramp to base_cap.
-    if SCALE_WARMUP_STEPS > 0 and step is not None:
-        warmup_factor = min(1.0, max(0.0, float(step)) / float(SCALE_WARMUP_STEPS))
-        warmup_cap = base_cap * max(SCALE_WARMUP_INIT, warmup_factor)
-        cap = min(cap, max(AGC_SCALE_MIN, warmup_cap))
 
-    scale_in = float(getattr(model, "update_scale", UPDATE_SCALE))
-    scale = scale_in
+    # Warmup floor: ramp linearly to AGC_SCALE_MIN over SCALE_WARMUP_STEPS from SCALE_WARMUP_INIT.
+    if step is not None:
+        warmup_horizon = max(1, SCALE_WARMUP_STEPS)
+        warmup = max(0.0, min(1.0, step / float(warmup_horizon)))
+        floor = SCALE_WARMUP_INIT + (AGC_SCALE_MIN - SCALE_WARMUP_INIT) * warmup
+        floor = max(0.0, min(AGC_SCALE_MIN, floor))
+    else:
+        floor = AGC_SCALE_MIN
+
+    scale = float(getattr(model, "update_scale", floor))
+    if not math.isfinite(scale) or scale <= 0:
+        scale = floor
+    if step is not None and step == 0:
+        scale = floor
+
     if AGC_ENABLED and grad_norm is not None and math.isfinite(grad_norm):
         if grad_norm < AGC_GRAD_LOW:
             scale *= AGC_SCALE_UP
         elif grad_norm > AGC_GRAD_HIGH:
             scale *= AGC_SCALE_DOWN
-    # Allow true feathering: only clamp to the cap, keep a tiny floor to avoid zero.
-    scale = max(1e-6, min(cap, scale))
+
+    scale = max(floor, min(cap, scale))
+    model.agc_scale_cap = cap
+    model.update_scale = scale
+    model.debug_scale_out = scale
     if step is not None and step == 0:
         dbg = {
-            "scale_in": scale_in,
+            "scale_in": scale,
             "scale_out": scale,
             "agc_scale_min": AGC_SCALE_MIN,
+            "warmup_floor": floor,
             "cap": cap,
             "base_cap": base_cap,
         }
         log(f"[debug_scale_step0] {dbg}")
-
-    # write back the updated scale so logging reflects the actual value
-    model.update_scale = scale
-
-    # Use the strongest dwell signal we have for gating (captures brief locks).
-    dwell_metric = max(current_dwell, max_dwell)
-
-    if SPEED_GOV_ENABLED and raw_delta is not None:
-        try:
-            raw_delta_value = float(raw_delta)
-        except (TypeError, ValueError):
-            raw_delta_value = None
-        if raw_delta_value is not None and math.isfinite(raw_delta_value):
-            raw_delta_value = max(0.0, raw_delta_value)
-            ground_speed_raw = raw_delta_value * scale
-            if math.isfinite(ground_speed_raw):
-                ema = getattr(model, "ground_speed_ema", None)
-                if ema is None or not math.isfinite(float(ema)):
-                    ema = ground_speed_raw
-                ema = float(ema)
-                limit = max(SPEED_GOV_L_MIN, min(SPEED_GOV_L_MAX, ema * SPEED_GOV_L_K))
-                if math.isfinite(limit) and limit > 0.0:
-                    # Apply brake only when not in a high-dwell lock state.
-                    if dwell_metric < dwell_brake_thresh:
-                        t = min(ground_speed_raw / limit, 0.5)
-                        h = t * (1.0 - t)
-                        brake = 1.0 + SPEED_GOV_RHO * (h / 0.25)
-                        if brake > 0.0 and math.isfinite(brake):
-                            cap = max(AGC_SCALE_MIN, min(base_cap, cap / brake))
-                            scale = max(AGC_SCALE_MIN, min(cap, scale / brake))
-                ground_speed = raw_delta_value * scale
-                ema = SPEED_GOV_L_EMA * ema + (1.0 - SPEED_GOV_L_EMA) * ground_speed
-                model.ground_speed_ema = ema
-                model.ground_speed_limit = limit
-                model.ground_speed = ground_speed
-
-    # Recovery reflex: if dwell is high, aggressively relax cap/scale upward and clear speed history.
-    if dwell_metric >= dwell_recover_thresh:
-        if SPEED_GOV_RHO > 0:
-            cap = base_cap  # hard reset to full cap when locked
-            model.ground_speed_ema = None  # clear ghost velocity
-            model.ground_speed_limit = None
-            model.ground_speed = None
-            # Raise floor during lock so we can actually learn.
-            scale_floor = max(0.020, AGC_SCALE_MIN, cap * 0.4)
-            scale = max(scale_floor, scale)
-            scale = min(cap, scale * (1.0 / SPEED_GOV_RHO))
-        else:
-            scale = min(base_cap, scale)
-
-    # Persist dynamic cap and scale.
-    cap = max(AGC_SCALE_MIN, min(base_cap, cap))
-    scale = max(AGC_SCALE_MIN, min(cap, scale))
-    model.agc_scale_cap = cap
-    model.update_scale = scale
+    return scale
 
 
 def apply_inertia_auto(model, ptr_velocity, panic_active=False):
@@ -1079,10 +1035,11 @@ class AbsoluteHallway(nn.Module):
                 # Inertia drop on marker to prevent orbital limit cycles: brake when marker seen.
                 # If any marker in batch, lower inertia; otherwise restore baseline.
                 base_inertia = getattr(self, "ptr_inertia_base", self.ptr_inertia)
-                if marker.any():
-                    self.ptr_inertia = 0.05
-                else:
-                    self.ptr_inertia = base_inertia
+                inertia_override = os.environ.get("TP6_PTR_INERTIA_OVERRIDE")
+                if inertia_override is not None:
+                    base_inertia = float(inertia_override)
+                # Do not override inertia based on marker; honor configured/dynamic value.
+                self.ptr_inertia = base_inertia
             if collect_xray and target_mask is not None:
                 # Recompute weights after any warp so attention reflects true pointer position.
                 offsets_post = torch.arange(-self.gauss_k, self.gauss_k + 1, device=device, dtype=ptr_float.dtype)
@@ -1125,13 +1082,15 @@ class AbsoluteHallway(nn.Module):
                 inertia_use = torch.full((B,), float(self.ptr_inertia), device=device, dtype=ptr_dtype)
                 deadzone_use = torch.full((B,), float(self.ptr_deadzone), device=device, dtype=ptr_dtype)
                 walk_use = torch.full((B,), float(self.ptr_walk_prob), device=device, dtype=ptr_dtype)
-                if self.inertia_head is not None:
-                    inertia_use = torch.sigmoid(self.inertia_head(upd)).squeeze(1).to(ptr_dtype)
-                if self.deadzone_head is not None:
-                    # Softplus to ensure non-negative deadzone.
-                    deadzone_use = torch.nn.functional.softplus(self.deadzone_head(upd)).squeeze(1).to(ptr_dtype)
-                if self.walk_head is not None:
-                    walk_use = torch.sigmoid(self.walk_head(upd)).squeeze(1).to(ptr_dtype)
+                # Respect manual steering override: disable neural heads for inertia/deadzone/walk.
+                if os.environ.get("TP6_PTR_INERTIA_OVERRIDE") is None:
+                    if self.inertia_head is not None:
+                        inertia_use = torch.sigmoid(self.inertia_head(upd)).squeeze(1).to(ptr_dtype)
+                    if self.deadzone_head is not None:
+                        # Softplus to ensure non-negative deadzone.
+                        deadzone_use = torch.nn.functional.softplus(self.deadzone_head(upd)).squeeze(1).to(ptr_dtype)
+                    if self.walk_head is not None:
+                        walk_use = torch.sigmoid(self.walk_head(upd)).squeeze(1).to(ptr_dtype)
                 # Clamp ranges
                 inertia_use = torch.clamp(inertia_use, 0.0, 0.99)
                 deadzone_use = torch.clamp(deadzone_use, min=0.0)
@@ -1951,18 +1910,25 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
     else:
         model.ptr_update_auto = PTR_UPDATE_AUTO
     # Reset adaptive scales to env defaults to avoid carrying prior runs.
-    init_scale = float(os.environ.get("TP6_SCALE_INIT", UPDATE_SCALE))
+    init_scale = AGC_SCALE_MIN
     model.update_scale = init_scale
     model.agc_scale_max = AGC_SCALE_MAX
     model.agc_scale_cap = AGC_SCALE_MAX
+    env_inertia = os.environ.get("TP6_PTR_INERTIA_OVERRIDE")
+    if env_inertia is not None:
+        model.ptr_inertia = float(env_inertia)
+        model.ptr_inertia_ema = model.ptr_inertia
 
     start = time.time()
-    end_time = start + wall_clock if wall_clock > 0 else float("inf")
+    # Disable wall-clock cutoff to allow indefinite runs unless externally stopped.
+    end_time = float("inf")
     last_heartbeat = start
     last_live_trace = start
     step = 0
     if RESUME and os.path.exists(CHECKPOINT_PATH):
-        ckpt = torch.load(CHECKPOINT_PATH, map_location=DEVICE)
+        resume_path = os.path.abspath(CHECKPOINT_PATH)
+        log(f"Resume requested, attempting load: {resume_path}")
+        ckpt = torch.load(resume_path, map_location=DEVICE)
         try:
             model.load_state_dict(ckpt["model"])
         except RuntimeError:
@@ -1995,13 +1961,26 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
             model.ground_speed_ema = ckpt["ground_speed_ema"]
         if "ground_speed_limit" in ckpt:
             model.ground_speed_limit = ckpt["ground_speed_limit"]
-        # Optional: allow env overrides for scale/cap after resume.
-        if "TP6_UPDATE_SCALE" in os.environ:
-            model.update_scale = float(CFG.update_scale)
-        if "TP6_SCALE_MAX" in os.environ:
-            model.agc_scale_max = float(CFG.agc_scale_max)
-        log(f"Resumed from checkpoint: {CHECKPOINT_PATH} (step={step})")
+        # Honor env overrides after resume (no hidden reset).
+        env_scale_init = os.environ.get("TP6_SCALE_INIT")
+        env_scale_max = os.environ.get("TP6_SCALE_MAX")
+        if env_scale_init is not None:
+            model.update_scale = float(env_scale_init)
+        if env_scale_max is not None:
+            model.agc_scale_max = float(env_scale_max)
+        env_inertia = os.environ.get("TP6_PTR_INERTIA_OVERRIDE")
+        if env_inertia is not None:
+            model.ptr_inertia = float(env_inertia)
+            model.ptr_inertia_ema = model.ptr_inertia
+        model.agc_scale_cap = model.agc_scale_max
+        # Clear dynamic speed stats to avoid stale velocity.
+        model.ground_speed_ema = None
+        model.ground_speed_limit = None
+        model.ground_speed = None
+        model.debug_scale_out = model.update_scale
+        log(f"Resumed from checkpoint: {resume_path} (step={step}) | update_scale={model.update_scale}")
     # cycle loader until wall clock
+    # Disable early-stop flag; we rely on external stop or manual interrupt.
     stop_early = False
     xray_enabled = os.getenv("TP6_XRAY", "0") == "1"
     while time.time() <= end_time:
@@ -2087,7 +2066,11 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
             if GRAD_CLIP > 0.0:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP)
             raw_delta = getattr(model, "ptr_delta_raw_mean", None)
-            apply_update_agc(model, grad_norm if hasattr(model, "theta_ptr_reduced") else None, raw_delta, step=step)
+            scale_after_agc = apply_update_agc(
+                model, grad_norm if hasattr(model, "theta_ptr_reduced") else None, raw_delta, step=step
+            )
+            if scale_after_agc is not None:
+                model.update_scale = scale_after_agc
             scaler.step(optimizer)
             scaler.update()
 
@@ -2117,11 +2100,16 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                 ctrl = panic_reflex.update(float(loss))
                 panic_status = ctrl["status"]
                 if panic_status == "PANIC":
-                    model.ptr_inertia = ctrl["inertia"]
-                    model.ptr_walk_prob = ctrl["walk_prob"]
+                    if os.environ.get("TP6_PTR_INERTIA_OVERRIDE") is None:
+                        model.ptr_inertia = ctrl["inertia"]
+                        model.ptr_walk_prob = ctrl["walk_prob"]
             ptr_velocity_raw = getattr(model, "ptr_delta_raw_mean", None)
-            apply_inertia_auto(model, ptr_velocity_raw, panic_status == "PANIC")
-            if cadence_gov is not None:
+            # Do not override manual inertia when TP6_PTR_INERTIA_OVERRIDE is set.
+            if os.environ.get("TP6_PTR_INERTIA_OVERRIDE") is None:
+                apply_inertia_auto(model, ptr_velocity_raw, panic_status == "PANIC")
+            if os.environ.get("TP6_FORCE_CADENCE_1") == "1":
+                model.ptr_update_every = 1
+            elif cadence_gov is not None:
                 flip_rate = float(model.ptr_flip_rate) if hasattr(model, "ptr_flip_rate") else 0.0
                 ptr_velocity = getattr(model, "ptr_delta_abs_mean", None)
                 model.ptr_update_every = cadence_gov.update(loss.item(), grad_norm, flip_rate, ptr_velocity)
@@ -2155,6 +2143,7 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                 ground_speed = getattr(model, "ground_speed", None)
                 ground_speed_ema = getattr(model, "ground_speed_ema", None)
                 ground_speed_limit = getattr(model, "ground_speed_limit", None)
+                scale_log = getattr(model, "debug_scale_out", getattr(model, "update_scale", UPDATE_SCALE))
                 shard_info = getattr(model, "debug_shard_info", None)
                 xray_text = ""
                 if xray_enabled and isinstance(locals().get("xray"), dict):
@@ -2204,7 +2193,7 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                 agc_cap = getattr(model, "agc_scale_cap", getattr(model, "agc_scale_max", AGC_SCALE_MAX))
                 log(
                     f"{dataset_name} | {model_name} | step {step:04d} | loss {loss.item():.4f} | "
-                    f"t={elapsed:.1f}s | ctrl(inertia={model.ptr_inertia:.2f}, deadzone={model.ptr_deadzone:.2f}, walk={model.ptr_walk_prob:.2f}, cadence={model.ptr_update_every}, scale={getattr(model, 'update_scale', UPDATE_SCALE):.3f}, cap={agc_cap:.3f}"
+                    f"t={elapsed:.1f}s | ctrl(inertia={model.ptr_inertia:.2f}, deadzone={model.ptr_deadzone:.2f}, walk={model.ptr_walk_prob:.2f}, cadence={model.ptr_update_every}, scale={float(scale_log):.3f}, cap={agc_cap:.3f}"
                     f"{raw_delta_text}{ground_speed_text}{ground_speed_ema_text}{ground_speed_limit_text}{shard_text}{ptr_text})"
                     + xray_text
                     + (f" | panic={panic_status}" if panic_reflex is not None else "")
@@ -2270,9 +2259,7 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
             if pulse_applied:
                 model.ptr_walk_prob = prev_walk_prob
             step += 1
-            if MAX_STEPS > 0 and step >= MAX_STEPS:
-                stop_early = True
-                break
+            # Skip early termination by MAX_STEPS; allow indefinite stepping.
             if SAVE_EVERY_STEPS > 0 and step % SAVE_EVERY_STEPS == 0:
                 loss_value = losses[-1] if losses else None
                 raw_delta = getattr(model, "ptr_delta_raw_mean", None)
@@ -2300,8 +2287,7 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                     log(f"Checkpoint saved @ step {step} -> {CHECKPOINT_PATH}")
                 else:
                     log(f"Checkpoint not updated (non-finite metrics) @ step {step}")
-        if stop_early:
-            break
+        # No early break; continue looping until externally stopped.
     # end while
 
     slope = compute_slope(losses)
@@ -2478,7 +2464,11 @@ def train_steps(model, loader, steps, dataset_name, model_name):
         if GRAD_CLIP > 0.0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP)
         raw_delta = getattr(model, "ptr_delta_raw_mean", None)
-        apply_update_agc(model, grad_norm_step if hasattr(model, "theta_ptr_reduced") else None, raw_delta, step=step)
+        scale_after_agc = apply_update_agc(
+            model, grad_norm_step if hasattr(model, "theta_ptr_reduced") else None, raw_delta, step=step
+        )
+        if scale_after_agc is not None:
+            model.update_scale = scale_after_agc
         scaler.step(optimizer)
         scaler.update()
 
@@ -2504,11 +2494,15 @@ def train_steps(model, loader, steps, dataset_name, model_name):
             ctrl = panic_reflex.update(float(loss))
             panic_status = ctrl["status"]
             if panic_status == "PANIC":
-                model.ptr_inertia = ctrl["inertia"]
-                model.ptr_walk_prob = ctrl["walk_prob"]
+                if os.environ.get("TP6_PTR_INERTIA_OVERRIDE") is None:
+                    model.ptr_inertia = ctrl["inertia"]
+                    model.ptr_walk_prob = ctrl["walk_prob"]
         ptr_velocity_raw = getattr(model, "ptr_delta_raw_mean", None)
-        apply_inertia_auto(model, ptr_velocity_raw, panic_status == "PANIC")
-        if cadence_gov is not None:
+        if os.environ.get("TP6_PTR_INERTIA_OVERRIDE") is None:
+            apply_inertia_auto(model, ptr_velocity_raw, panic_status == "PANIC")
+        if os.environ.get("TP6_FORCE_CADENCE_1") == "1":
+            model.ptr_update_every = 1
+        elif cadence_gov is not None:
             flip_rate = float(model.ptr_flip_rate) if hasattr(model, "ptr_flip_rate") else 0.0
             ptr_velocity = getattr(model, "ptr_delta_abs_mean", None)
             model.ptr_update_every = cadence_gov.update(loss.item(), grad_norm_step, flip_rate, ptr_velocity)
@@ -2520,35 +2514,36 @@ def train_steps(model, loader, steps, dataset_name, model_name):
         if heartbeat_due and hasattr(model, "theta_ptr_reduced"):
             grad_norm = grad_norm_step
             log(f"{dataset_name} | {model_name} | grad_norm(theta_ptr)={grad_norm:.4e}")
-        if heartbeat_due:
-            last_heartbeat = now
-            elapsed = now - start
-            raw_delta = getattr(model, "ptr_delta_raw_mean", None)
-            raw_delta_text = f", raw_delta={float(raw_delta):.3f}" if raw_delta is not None else ""
-            ground_speed = getattr(model, "ground_speed", None)
-            ground_speed_text = (
-                f", ground_speed={float(ground_speed):.3f}" if ground_speed is not None else ""
-            )
-            ground_speed_ema = getattr(model, "ground_speed_ema", None)
-            ground_speed_ema_text = (
-                f", g_ema={float(ground_speed_ema):.3f}" if ground_speed_ema is not None else ""
-            )
-            ground_speed_limit = getattr(model, "ground_speed_limit", None)
-            ground_speed_limit_text = (
-                f", g_L={float(ground_speed_limit):.3f}" if ground_speed_limit is not None else ""
-            )
-            stats_dict = getattr(model, "debug_stats", None)
-            try:
-                stats_payload = json.dumps(stats_dict if stats_dict is not None else {}, separators=(",", ":"))
-            except Exception:
-                stats_payload = str(stats_dict)
-            debug_payload = f" | debug {stats_payload}"
-            log(
-                f"{dataset_name} | {model_name} | step {step:04d}/{steps:04d} | loss {loss.item():.4f} | "
-                f"t={elapsed:.1f}s | ctrl(inertia={model.ptr_inertia:.2f}, deadzone={model.ptr_deadzone:.2f}, walk={model.ptr_walk_prob:.2f}, cadence={model.ptr_update_every}, scale={getattr(model, 'update_scale', UPDATE_SCALE):.3f}{raw_delta_text}{ground_speed_text}{ground_speed_ema_text}{ground_speed_limit_text})"
-                + (f" | panic={panic_status}" if panic_reflex is not None else "")
-                + debug_payload
-            )
+            if heartbeat_due:
+                last_heartbeat = now
+                elapsed = now - start
+                raw_delta = getattr(model, "ptr_delta_raw_mean", None)
+                raw_delta_text = f", raw_delta={float(raw_delta):.3f}" if raw_delta is not None else ""
+                ground_speed = getattr(model, "ground_speed", None)
+                ground_speed_text = (
+                    f", ground_speed={float(ground_speed):.3f}" if ground_speed is not None else ""
+                )
+                ground_speed_ema = getattr(model, "ground_speed_ema", None)
+                ground_speed_ema_text = (
+                    f", g_ema={float(ground_speed_ema):.3f}" if ground_speed_ema is not None else ""
+                )
+                ground_speed_limit = getattr(model, "ground_speed_limit", None)
+                ground_speed_limit_text = (
+                    f", g_L={float(ground_speed_limit):.3f}" if ground_speed_limit is not None else ""
+                )
+                scale_log = getattr(model, "debug_scale_out", getattr(model, "update_scale", UPDATE_SCALE))
+                stats_dict = getattr(model, "debug_stats", None)
+                try:
+                    stats_payload = json.dumps(stats_dict if stats_dict is not None else {}, separators=(",", ":"))
+                except Exception:
+                    stats_payload = str(stats_dict)
+                debug_payload = f" | debug {stats_payload}"
+                log(
+                    f"{dataset_name} | {model_name} | step {step:04d}/{steps:04d} | loss {loss.item():.4f} | "
+                    f"t={elapsed:.1f}s | ctrl(inertia={model.ptr_inertia:.2f}, deadzone={model.ptr_deadzone:.2f}, walk={model.ptr_walk_prob:.2f}, cadence={model.ptr_update_every}, scale={float(scale_log):.3f}{raw_delta_text}{ground_speed_text}{ground_speed_ema_text}{ground_speed_limit_text})"
+                    + (f" | panic={panic_status}" if panic_reflex is not None else "")
+                    + debug_payload
+                )
             if train_trace_enabled:
                 pointer_entropy = None
                 pointer_total = None
@@ -2578,7 +2573,7 @@ def train_steps(model, loader, steps, dataset_name, model_name):
                     "ptr_max_dwell": getattr(model, "ptr_max_dwell", None),
                     "ptr_delta_abs_mean": getattr(model, "ptr_delta_abs_mean", None),
                     "ptr_delta_raw_mean": getattr(model, "ptr_delta_raw_mean", None),
-                    "update_scale": getattr(model, "update_scale", UPDATE_SCALE),
+                    "update_scale": getattr(model, "debug_scale_out", getattr(model, "update_scale", UPDATE_SCALE)),
                     "ground_speed": getattr(model, "ground_speed", None),
                     "ground_speed_ema": getattr(model, "ground_speed_ema", None),
                     "ground_speed_limit": getattr(model, "ground_speed_limit", None),
@@ -2836,7 +2831,7 @@ def main():
 
     summary = []
 
-    # Synthetic short-circuit: if TP6_SYNTH=1, bypass MNIST entirely
+    # Synthetic short-circuit: if TP6_SYNTH=1, bypass MNIST entirely and run indefinitely.
     synth_env = os.environ.get("TP6_SYNTH", "0").strip()
     if synth_env == "1":
         synth_loader, synth_classes, synth_collate = get_seq_mnist_loader()
@@ -2844,7 +2839,10 @@ def main():
             synth_loader.dataset, input_collate=synth_collate
         )
         log_eval_overlap(synth_loader.dataset, synth_eval_loader.dataset, eval_size, "synth_subset")
-        summary.append(run_phase("synth", synth_loader, synth_eval_loader, input_dim=1, num_classes=synth_classes))
+        # Run forever until manually stopped; no tournament summary/exit.
+        while True:
+            run_phase("synth", synth_loader, synth_eval_loader, input_dim=1, num_classes=synth_classes)
+        return
     elif RUN_MODE == "lockout":
         summary.append(run_lockout_test())
     else:
@@ -2885,13 +2883,21 @@ def main():
             summary.append(run_phase("seq_mnist", mnist_loader, mnist_eval_loader, input_dim=1, num_classes=mnist_classes))
 
     # Ensure GPU work is complete before writing summary to avoid partial/hung writes.
+    # For synthetic indefinite run we skip summary writing and syncing to keep process alive.
     if torch.cuda.is_available():
         torch.cuda.synchronize()
-    summary_path = os.path.join(ROOT, "summaries", "current", "tournament_phase6_summary.json")
-    with open(summary_path, "w", encoding="utf-8") as f:
-        json.dump(summary, f, indent=2)
-    log(f"Tournament done. Summary saved to {summary_path}")
-    sync_current_to_last()
+    if summary:
+        summary_path = os.path.join(ROOT, "summaries", "current", "tournament_phase6_summary.json")
+        try:
+            with open(summary_path, "w", encoding="utf-8") as f:
+                json.dump(summary, f, indent=2)
+            log(f"Tournament done. Summary saved to {summary_path}")
+        except Exception as e:
+            log(f"Summary write skipped: {e}")
+        try:
+            sync_current_to_last()
+        except Exception as e:
+            log(f"Summary sync skipped: {e}")
 
 
 if __name__ == "__main__":

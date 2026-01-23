@@ -4,6 +4,8 @@
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
 
+  const REPO_URL = 'https://github.com/Kenessy/VRAXION';
+
   // --- RESPONSIVE CRT SCALE ---
   // The UI is authored at a fixed 640x360 "signal" resolution.
   // We scale it to fit any viewport, while preserving the intended look.
@@ -28,6 +30,7 @@
       $$('.state').forEach(el => el.classList.remove('active'));
       document.getElementById(`state-${newState}`).classList.add('active');
       this.state = newState;
+      document.body.classList.toggle('mode-reader', newState === 'reader');
     }
   };
 
@@ -69,7 +72,7 @@
 
       // Async Sequence
       await runTerminalLine("BIOS: VRAXION_AXIS [INIT]", 15, 60, check);
-      if (!skipped) await runTerminalLine("KERNEL: INSTNCT v0.5.3 [LOAD]", 25, 40, check);
+      if (!skipped) await runTerminalLine("KERNEL: INSTNCT v1.0.0 [LOAD]", 25, 40, check);
       if (!skipped) await runTerminalLine("PTR_DYNAMICS: ∇θ [SYNC]", 20, 80, check);
       if (!skipped) await runTerminalLine("SYSTEM: ONLINE [READY]", 30, 30, check);
 
@@ -208,6 +211,12 @@
 
         return;
       }
+      // G to open the GitHub repo
+      if (key === 'g') {
+        window.open(REPO_URL, '_blank', 'noopener');
+        return;
+      }
+
       const map = {
         'm': 'manifest',
         'i': 'instnct',
@@ -233,6 +242,16 @@
   });
 
   // --- REBOOT BUTTON ---
+  // --- REPO BUTTON ---
+  const repoBtn = document.getElementById('btn-repo');
+  if (repoBtn) {
+    repoBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.open(REPO_URL, '_blank', 'noopener');
+    });
+  }
+
+  
   const rebootBtn = document.getElementById('btn-reboot');
   if (rebootBtn) {
     rebootBtn.addEventListener('click', (e) => {

@@ -4,6 +4,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="VRAXION — research preview of INSTNCT (formerly PRIME C-19): a phase-recurring manifold memory engine. Noncommercial public snapshot.">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="icon" href="assets/vraxion-mark.svg" type="image/svg+xml">
+
+  <meta property="og:title" content="VRAXION // INSTNCT">
+  <meta property="og:description" content="Phase-Recurring Infinite Manifold Engine (research preview, noncommercial).">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://kenessy.github.io/VRAXION/">
+  <meta property="og:image" content="https://kenessy.github.io/VRAXION/assets/banner-dark.svg">
   <title>VRAXION // INSTNCT</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -119,10 +128,9 @@
           </div>
         </div>
         <div class="bottom-hud">
-          <span class="bottom-left">CMD: [KEYS] SELECT // [ARROWS] NAVIGATE // <span id="btn-reboot"
-              style="cursor: pointer; color: var(--blue);">[<span class="hotkey">R</span>]EBOOT</span></span>
-          <span class="bottom-right"><a id="btn-repo" href="https://github.com/Kenessy/VRAXION" target="_blank"
-              rel="noopener noreferrer">[REPO]</a></span>
+          CMD: [KEYS] SELECT // [ARROWS] NAVIGATE //
+          <span id="btn-repo" class="hud-btn">[<span class="hotkey">G</span>]REPO</span> //
+          <span id="btn-reboot" class="hud-btn">[<span class="hotkey">R</span>]EBOOT</span>
         </div>
       </div>
 
@@ -142,679 +150,419 @@
 
   <!-- DATA SOURCE (Preserved VRAXION Content) -->
   <div id="data-source" style="display:none;">
-    <div id="data-manifest">
-      <h1>MANIFEST // VRAXION</h1>
-      <p>I work best at the boundary where intuition meets engineering: take a weird idea, formalize it, run it, and log
-        it.</p>
-
-      <div class="data-grid">
-
-        <!-- CARD 1: IDENTITY -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: USER/PROFILE -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-            <h3 class="card-title">1. IDENTITY</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Founder:</strong> Daniel Kenessy (Slovakia, 31).
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>Status:</strong> Prototyping edge-case ideas.</li>
-            <li><strong>Motto:</strong> "Shaving off self-deception."</li>
-          </ul>
-        </div>
-
-        <!-- CARD 2: VISION -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: EYE/HORIZON -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path
-                d="M19.07 4.93L17.66 6.34C18.53 7.15 19.34 8.05 20 9c-1.9 2.7-5.35 5-10 5-2.07 0-3.95-.45-5.63-1.25L2.93 14.21c2.01 1.48 4.46 2.45 7.07 2.45 6.63 0 12-5.37 12-12 0-.23-.03-.46-.07-.68z">
-              </path>
-              <line x1="1" y1="1" x2="23" y2="23"></line>
-            </svg>
-            <h3 class="card-title">2. VISION</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Goal:</strong> Build AI that is Cheap, Local, and Useful.
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>Edge-First:</strong> Intelligence without a data center.</li>
-            <li><strong>Tools, not Chatbots:</strong> Extending human capability.</li>
-          </ul>
-        </div>
-
-        <!-- CARD 3: OPTIMIZATION -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: SLIDERS/SETTINGS -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <line x1="4" y1="21" x2="4" y2="14"></line>
-              <line x1="4" y1="10" x2="4" y2="3"></line>
-              <line x1="12" y1="21" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12" y2="3"></line>
-              <line x1="20" y1="21" x2="20" y2="16"></line>
-              <line x1="20" y1="12" x2="20" y2="3"></line>
-              <line x1="1" y1="14" x2="7" y2="14"></line>
-              <line x1="9" y1="8" x2="15" y2="8"></line>
-              <line x1="17" y1="16" x2="23" y2="16"></line>
-            </svg>
-            <h3 class="card-title" style="color: var(--purple);">3. OPTIMIZATION FUNCTION</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Architectural Priorities:</strong>
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>Coherence:</strong> Stability under long horizons.</li>
-            <li><strong>Seam-Safety:</strong> Predictable behavior across seams.</li>
-            <li><strong>Honesty:</strong> Rigorous ablations & negative controls.</li>
-          </ul>
-        </div>
-
-        <!-- CARD 4: CANONICAL LINKS -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: LINK -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10 13a5 5 0 0 1 0-7l1-1a5 5 0 0 1 7 7l-1 1"></path>
-              <path d="M14 11a5 5 0 0 1 0 7l-1 1a5 5 0 0 1-7-7l1-1"></path>
-            </svg>
-            <h3 class="card-title">4. CANONICAL LINKS</h3>
-          </div>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>Repository:</strong> <a href="https://github.com/Kenessy/VRAXION" target="_blank" rel="noopener">github.com/Kenessy/VRAXION</a></li>
-            <li><strong>Cite (all versions):</strong> <a href="https://doi.org/10.5281/zenodo.18289891" target="_blank" rel="noopener">10.5281/zenodo.18289891</a></li>
-            <li><strong>Cite (this snapshot):</strong> <a href="https://doi.org/10.5281/zenodo.18300615" target="_blank" rel="noopener">10.5281/zenodo.18300615</a></li>
-          </ul>
-        </div>
-
-      </div>
-    </div>
-    <div id="data-instnct">
-      <h1>SYSTEM // INSTNCT</h1>
-      <p><strong>INSTNCT</strong> is the current product name for the architecture previously codenamed <strong>PRIME C‑19</strong>.
-        It is a pointer‑driven recurrent memory system operating on a <strong>continuous circular manifold</strong> (ring state),
-        designed to remain <strong>seam‑safe</strong> under closed‑loop transport.
-        <span style="opacity:0.75;">Note: earlier Zenodo snapshots/DOIs may still use the PRIME C‑19 name.</span></p>
-
-      <div class="data-grid">
-
-        <!-- CARD 1: THE ARTIFACT -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: HEXAGON/BOX -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path
-                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
-              </path>
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-              <line x1="12" y1="22.08" x2="12" y2="12"></line>
-            </svg>
-            <h3 class="card-title">1. INSTNCT (RESEARCH PREVIEW)</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Current Snapshot:</strong> Zenodo v0.5.3 (Jan 2026)
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>Core:</strong> Pointer‑driven read → update → write on a circular ring state.</li>
-            <li><strong>Runtime:</strong> Python + PyTorch (prototype).</li>
-            <li><strong>Objective:</strong> Stable long‑horizon learning without seam tearing.</li>
-          </ul>
-        </div>
-
-        <!-- CARD 2: SEAM TOPOLOGY -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: REFRESH/LOOP -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21.5 2v6h-6"></path>
-              <path d="M2.5 22v-6h6"></path>
-              <path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8"></path>
-              <path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16"></path>
-            </svg>
-            <h3 class="card-title">2. SEAM-AWARE TRANSPORT</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Topology:</strong> Circular winding logic prevents "tearing".
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li>Explicit handling of circular wrap.</li>
-            <li>Shortest-arc interpolation for state continuity.</li>
-          </ul>
-        </div>
-
-        <!-- CARD 3: POINTER STABILITY -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: ANCHOR/PIN -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="5" r="3"></circle>
-              <line x1="12" y1="22" x2="12" y2="8"></line>
-              <path d="M5 12H2a10 10 0 0 0 20 0h-3"></path>
-            </svg>
-            <h3 class="card-title" style="color: var(--purple);">3. POINTER DYNAMICS</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Stabilization:</strong> Reducing numerical noise in early regimens.
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li>Walk/Jump dynamics with inertial stabilizers.</li>
-            <li>Prevents pathological stalls during traversal.</li>
-          </ul>
-        </div>
-
-        <!-- CARD 4: INFERENCE EFFICIENCY (HYPOTHESIS) -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: ZAP -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-            </svg>
-            <h3 class="card-title" style="color: var(--purple);">4. INFERENCE EFFICIENCY (HYPOTHESIS TARGET)</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Hypothesis:</strong> if implemented and optimized correctly, pointer‑routed recurrence on a
-            structured ring may enable <em>large</em> inference efficiency gains (potentially orders of magnitude) by
-            leveraging locality and reuse. <span style="opacity:0.75;">Not proven. Not a benchmark claim.</span>
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>Status:</strong> current code is a research prototype; training still demands compute.</li>
-            <li><strong>What would count as evidence:</strong> reproducible profiling at matched quality vs baselines.</li>
-            <li><strong>Plan:</strong> publish speed/accuracy curves + negative controls (no “magic numbers”).</li>
-          </ul>
-        </div>
-
-      </div>
-    </div>
-    <div id="data-evidence">
-      <h1>EVIDENCE // LOGS</h1>
-      <p>This is where we keep the project honest. Anything that matters gets measured, and anything that looks like
-        "magic" gets ablated.</p>
-
-      <div class="data-grid">
-
-        <!-- CARD 0: SNAPSHOT -->
-        <div class="data-card highlight">
-          <div class="card-header">
-            <!-- ICON: BAR CHART -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--white)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="20" x2="12" y2="10"></line>
-              <line x1="18" y1="20" x2="18" y2="4"></line>
-              <line x1="6" y1="20" x2="6" y2="16"></line>
-            </svg>
-            <h3 class="card-title">0. SNAPSHOT (STATUS, NOT A BENCHMARK)</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            A tiny example from the repo’s evidence logs: a <strong>cadence knee</strong> sweep on a synthetic
-            associative recall task. This is here to show the "measure-first" culture — not to claim SOTA.
-          </p>
-          <img src="assets/cadence_knee.svg" alt="Assoc Clean cadence knee chart">
-          <p style="color: var(--white); font-size: 11px; margin: 0; opacity: 0.85;">
-            Reproduce and inspect source tables via the README + logs.
-          </p>
-        </div>
-
-        <!-- CARD 1: REPRODUCIBILITY -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: CODE/TERMINAL -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="4 17 10 11 4 5"></polyline>
-              <line x1="12" y1="19" x2="20" y2="19"></line>
-            </svg>
-            <h3 class="card-title">1. REPRODUCIBILITY</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Trust but Verify:</strong> Benchmarks are meaningless without reproduction.
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li>Run the minimal scripts (see README).</li>
-            <li>Confirm baseline behavior before trusting metric shifts.</li>
-          </ul>
-        </div>
-
-        <!-- CARD 2: NEGATIVE CONTROLS -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: FLASK -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10 2v7.31"></path>
-              <path d="M14 2v7.31"></path>
-              <path d="M8.5 2h7"></path>
-              <path d="M14 9.3a6.5 6.5 0 1 1-4 0"></path>
-            </svg>
-            <h3 class="card-title">2. NEGATIVE CONTROLS</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Ablation Testing:</strong> We document what happens when components are removed.
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li>"If it still works without X, X wasn't the point."</li>
-            <li>Documenting failure modes when stabilizers are disabled.</li>
-          </ul>
-        </div>
-
-        <!-- CARD 3: ADVERSARIAL CHECKLIST -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: TARGET -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <circle cx="12" cy="12" r="6"></circle>
-              <circle cx="12" cy="12" r="2"></circle>
-            </svg>
-            <h3 class="card-title" style="color: var(--purple);">3. ADVERSARIAL CHECKLIST</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Stress Testing:</strong> The fastest path to truth is trying to break it.
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li>Does behavior drift across long runs?</li>
-            <li>What happens at high jump rates?</li>
-            <li>Is there hidden leakage ("cheats")?</li>
-          </ul>
-        </div>
-
-        <!-- CARD 4: INTEGRITY STANDARD -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: SCALE/BALANCE -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--white)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-              <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-            </svg>
-            <h3 class="card-title" style="color: var(--white);">4. INTEGRITY STANDARD</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>The Rigor Rule:</strong>
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>MEASURED:</strong> Reproducible by an outsider.</li>
-            <li><strong>OBSERVED:</strong> Internal result only. Treat with caution.</li>
-            <li style="opacity: 0.7; font-style: italic;">"If it can't be reproduced, it's not a measurement."</li>
-          </ul>
-        </div>
-
-      </div>
-    </div>
-    <div id="data-hypothesis">
-      <h1>HYPOTHESIS // UNPROVEN</h1>
-      <p>This section documents ideas that do not exist as established science. It is here to timestamp concepts and
-        propose falsifiable tests.</p>
-
-      <div class="data-grid">
-
-        <!-- CARD 0: PILOT-PULSE CONJECTURE -->
-        <div class="data-card highlight">
-          <div class="card-header">
-            <!-- ICON: COMPASS -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--white)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polygon points="16 8 14 14 8 16 10 10 16 8"></polygon>
-            </svg>
-            <h3 class="card-title">0. PILOT‑PULSE CONJECTURE</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Hypothesis:</strong> intelligence is not only compute or storage — it’s
-            <strong>navigation performance</strong> (Pilot) over a learned structure (Substrate).
-            <span style="opacity:0.75;">Speculative framing; not a consciousness claim.</span>
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>Strong substrate, weak pilot:</strong> memory exists, routing collapses.</li>
-            <li><strong>Strong pilot, weak substrate:</strong> stable traversal, low capacity.</li>
-            <li><strong>Aligned pilot + substrate:</strong> stable long-horizon learning becomes possible.</li>
-          </ul>
-        </div>
-
-        <!-- CARD 1: THEORY OF THOUGHT -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: NETWORK/NODES -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="18" cy="5" r="3"></circle>
-              <circle cx="6" cy="12" r="3"></circle>
-              <circle cx="18" cy="19" r="3"></circle>
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-            </svg>
-            <h3 class="card-title">1. THEORY OF THOUGHT</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Hypothesis:</strong> "Thought" is controlled traversal over a structured latent manifold.
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>Identity:</strong> Continuity under transport (no seam tearing).</li>
-            <li><strong>Insight:</strong> Finding a low-energy path to a new stable basin.</li>
-          </ul>
-        </div>
-
-        <!-- CARD 2: SELF-MODELING -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: EYE/TARGET -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-            <h3 class="card-title">2. SELF-MODELING LOOP</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Hypothesis:</strong> If a system predicts its own near-future internal state, "self-monitoring"
-            signals emerge.
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>Test:</strong> Does self-forecasting accuracy rise over training?</li>
-            <li><strong>Prediction:</strong> Self-prediction degrades if continuity is broken.</li>
-          </ul>
-        </div>
-
-        <!-- CARD 3: TERMINAL LUCIDITY -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: PULSE/ACTIVITY -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-            </svg>
-            <h3 class="card-title" style="color: var(--purple);">3. TERMINAL LUCIDITY (ANALOGY)</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Concept:</strong> "Lucidity bursts" appear when constraints allow re-entry into a stable trajectory
-            after degradation.
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>Experiment:</strong> Degrade system -> Open stability window -> Measure return.</li>
-            <li><strong>Note:</strong> Not a medical claim. Purely AI architecture analogy.</li>
-          </ul>
-        </div>
-
-        <!-- CARD 4: TOPOLOGICAL RECURSION -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: REPEAT -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 1l4 4-4 4"></path>
-              <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-              <path d="M7 23l-4-4 4-4"></path>
-              <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-            </svg>
-            <h3 class="card-title" style="color: var(--purple);">4. TOPOLOGICAL RECURSION</h3>
-          </div>
-          <p style="color: var(--white); font-size: 11px; margin-bottom: 8px;">
-            <strong>Hypothesis:</strong> repeatedly applying a looped operator (read → update → write → move) can form
-            stable recurrence structures (dwell, cycles, attractors) that behave like “thought trajectories”.
-          </p>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>Observable signatures:</strong> dwell time, flip rate, ABAB ping‑pong, mode entropy.</li>
-            <li><strong>Falsifiable:</strong> if no stable recurrence appears under controlled conditions, the framing fails.</li>
-          </ul>
-        </div>
-
-      </div>
-    </div>
-    <div id="data-partners">
-      <h1>PARTNERSHIP // BUILD WITH ME</h1>
-      <p>
-        <strong>VRAXION</strong> is an early-stage research-to-product effort.
-        <strong>INSTNCT</strong> is the current name for the architecture previously codenamed <strong>PRIME C‑19</strong>.
-        <br><br>
-        I’m assembling a small, high-trust core team to take INSTNCT from <span style="opacity:0.8;">research preview</span>
-        to a reproducible, optimized release (clean code, clean benchmarks, clean story).
-        <br><br>
-        <strong>Important:</strong> I’m not in a position to hire salaried employees yet. I’m looking for
-        <strong>partners / co-founders</strong> (equity / revenue-share style) with clear written agreements.
-        Most of the current work is already public as prior-art disclosure; for anything not yet public,
-        we can use standard NDAs and contributor agreements through counsel.
+        <div id="data-manifest">
+      <h1>MANIFEST</h1>
+      <p style="margin-top: 8px; opacity: 0.92;">
+        Welcome to <strong>VRAXION</strong> — a deliberately minimal public snapshot of a bigger research effort.
+        This terminal UI is not “for show”: it’s a compact briefing format.
       </p>
+
+      <div class="data-grid">
+        <div class="data-card">
+          <div class="card-title">1. IDENTITY</div>
+          <p>
+            <strong>VRAXION™</strong> is the project umbrella.<br />
+            <strong>INSTNCT</strong> is the architecture codename (some older archives still say “PRIME&nbsp;C‑19”).
+          </p>
+          <ul>
+            <li><strong>Author:</strong> Daniel Kenessy (Slovakia)</li>
+            <li><strong>Focus:</strong> recurrent memory + manifold-style state spaces for long sequence learning</li>
+            <li><strong>Stage:</strong> research prototype (not production-ready)</li>
+          </ul>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">2. CURRENT PUBLIC SNAPSHOT</div>
+          <p>
+            The public mirror is intentionally slim: core code + licensing + citation.
+            Training docs/scripts/checkpoints are <strong>not</strong> shipped in the public archive.
+          </p>
+          <ul>
+            <li><strong>Zenodo archive:</strong> <a href="https://doi.org/10.5281/zenodo.18332532" target="_blank" rel="noopener">10.5281/zenodo.18332532</a> (v1.0.0, Jan&nbsp;22&nbsp;2026)</li>
+            <li><strong>GitHub repo:</strong> <a href="https://github.com/Kenessy/VRAXION" target="_blank" rel="noopener">https://github.com/Kenessy/VRAXION</a></li>
+            <li><strong>Live site:</strong> <a href="https://kenessy.github.io/VRAXION/" target="_blank" rel="noopener">https://kenessy.github.io/VRAXION/</a></li>
+            <li><strong>Commercial licensing:</strong> see <span class="kbd">COMMERCIAL_LICENSE.md</span> (contact: <a href="mailto:kenessy.dani@gmail.com">kenessy.dani@gmail.com</a>)</li>
+            <li><strong>Trademark:</strong> VRAXION™ is intended; no registration granted yet</li>
+          </ul>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">3. HOW TO READ THIS PROJECT</div>
+          <p>
+            VRAXION intentionally keeps two layers separate. Mixing them makes people either over-hype or dismiss the work.
+          </p>
+          <ul>
+            <li><strong>Engineering layer:</strong> code + benchmarks (what can be measured)</li>
+            <li><strong>Hypothesis layer:</strong> “pilot‑pulse / manifold” framing (why this might generalize)</li>
+          </ul>
+          <p class="micro">
+            Rule of thumb: if it isn’t logged, versioned, and reproducible — treat it as <em>hypothesis</em>.
+          </p>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">4. BOUNDARIES & DISCLAIMERS</div>
+          <ul>
+            <li>No claim of “proven machine consciousness.”</li>
+            <li>Any neuroscience mapping (self‑consciousness, terminal lucidity, etc.) is <strong>speculative</strong>.</li>
+            <li>No medical claims. No clinical guidance. No performance guarantees.</li>
+          </ul>
+          <p class="micro">
+            This snapshot also functions as a defensive publication: a timestamped artifact for prior art and attribution.
+          </p>
+        </div>
+      </div>
+    </div>    <div id="data-instnct">
+      <h1>INSTNCT</h1>
+      <p style="margin-top: 8px; opacity: 0.92;">
+        <strong>INSTNCT</strong> is the codename for the memory core inside VRAXION: a phase‑recurring recurrent system
+        that treats long sequences as <em>navigation</em> through a compact state space.
+        <span class="micro">(Older archives may call this “PRIME&nbsp;C‑19”.)</span>
+      </p>
+
+      <div class="data-grid">
+        <div class="data-card">
+          <div class="card-title">1. THE CORE IDEA (IN PLAIN ENGLISH)</div>
+          <p>
+            Instead of growing “context” linearly with sequence length, INSTNCT tries to reuse a small internal geometry.
+            It moves a pointer through that geometry, writing/reading associations as it goes.
+          </p>
+          <ul>
+            <li><strong>Phase recurrence:</strong> revisit earlier structure without storing every step</li>
+            <li><strong>Controlled jumps:</strong> allow non-local access while damping numerical chaos</li>
+            <li><strong>Stability goal:</strong> long sequences without silent drift or sudden collapse</li>
+          </ul>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">2. WHAT WE CLAIM (AND HOW STRONGLY)</div>
+          <ul>
+            <li><strong>Observed:</strong> the prototype can learn nontrivial sequential tasks (see EVIDENCE).</li>
+            <li><strong>Hypothesis:</strong> if implemented fully, inference‑time compute per step can stay low
+              even as effective memory depth increases.</li>
+            <li><strong>Not claimed:</strong> “free infinite memory”, “sentience”, or “AGI out of the box”.</li>
+          </ul>
+          <p class="micro">
+            The public snapshot is intentionally conservative: no marketing claims, only what we can eventually measure.
+          </p>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">3. WHAT’S IN THIS PUBLIC SNAPSHOT</div>
+          <ul>
+            <li><strong>Core code:</strong> <span class="kbd">prime_c19/</span></li>
+            <li><strong>Benchmark driver:</strong> <span class="kbd">tournament_phase6.py</span></li>
+            <li><strong>Licensing & attribution:</strong> <span class="kbd">LICENSE</span>, <span class="kbd">NOTICE</span>, <span class="kbd">CITATION.cff</span></li>
+            <li><strong>Commercial channel:</strong> <span class="kbd">COMMERCIAL_LICENSE.md</span></li>
+          </ul>
+          <p class="micro">
+            No datasets/checkpoints are shipped in the archive. This is a research snapshot, not a “download‑and‑train” kit.
+          </p>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">4. WHAT SUCCESS LOOKS LIKE (NEAR TERM)</div>
+          <p>
+            Before scaling grand claims, the next milestone is boring on purpose:
+            <strong>a reproducible benchmark pack</strong> that anyone can run and audit.
+          </p>
+          <ul>
+            <li>Fixed seeds, fixed configs, fixed baselines</li>
+            <li>Clear latency + memory profiling on consumer GPUs</li>
+            <li>Failure mode documentation (when/why it collapses)</li>
+          </ul>
+        </div>
+      </div>
+    </div>    <div id="data-evidence">
+      <h1>EVIDENCE</h1>
+      <p style="margin-top: 8px; opacity: 0.92;">
+        Evidence here means: <strong>versioned runs + reproducible configs + honest baselines</strong>.
+        If something is not reproducible yet, we label it as “in‑progress” or “hypothesis.”
+      </p>
+
+      <div class="data-grid">
+        <div class="data-card">
+          <div class="card-title">1. CURRENT ARTIFACTS</div>
+          <p>
+            This page includes a small set of visual artifacts from the research cycle.
+            They are not “proof” — they’re breadcrumbs that can be independently replicated later.
+          </p>
+          <ul>
+            <li><strong>Cadence knee:</strong> an early stability/transition plot (see below)</li>
+            <li><strong>Archive:</strong> Zenodo snapshot <a href="https://doi.org/10.5281/zenodo.18332532" target="_blank" rel="noopener">10.5281/zenodo.18332532</a></li>
+            <li><strong>Immutable mirror:</strong> Software Heritage (linked from Zenodo)</li>
+          </ul>
+          <div style="margin-top: 12px; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; padding: 10px;">
+            <img src="assets/cadence_knee.svg" alt="cadence knee chart" style="width: 100%; height: auto; display: block;" />
+            <div class="micro" style="margin-top: 8px; opacity: 0.85;">
+              Note: labels may evolve as the measurement pipeline stabilizes.
+            </div>
+          </div>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">2. REPRODUCIBILITY STANDARD</div>
+          <ul>
+            <li><strong>Hardware:</strong> specify GPU/CPU/RAM + driver versions</li>
+            <li><strong>Software:</strong> pinned Python/PyTorch/CUDA versions</li>
+            <li><strong>Configs:</strong> committed config files (no “magic defaults”)</li>
+            <li><strong>Baselines:</strong> at least one strong baseline per task</li>
+            <li><strong>Logs:</strong> upload raw metrics + plots, not only screenshots</li>
+          </ul>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">3. WHAT WE NEED NEXT (HONESTLY)</div>
+          <p>
+            The biggest risk in early research is self‑deception. The fix is simple: independent replication.
+          </p>
+          <ul>
+            <li>External reproduction of sequential benchmarks (e.g., sMNIST and friends)</li>
+            <li>Ablations that remove each “stability trick” one at a time</li>
+            <li>Profiling for inference throughput and memory</li>
+          </ul>
+          <p class="micro">
+            If you replicate results, please open an Issue / Discussion and include your full run context.
+          </p>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">4. KNOWN LIMITS (AS OF THIS SNAPSHOT)</div>
+          <ul>
+            <li>Not production‑ready. No guarantee of stability across environments.</li>
+            <li>Public archive is code‑only; datasets/checkpoints are not bundled.</li>
+            <li>Some claims remain hypotheses until the benchmark pack is fully public and replicated.</li>
+          </ul>
+        </div>
+      </div>
+    </div>    <div id="data-hypothesis">
+      <h1>HYPOTHESIS</h1>
+      <p style="margin-top: 8px; opacity: 0.92;">
+        This section is a <strong>hypothesis layer</strong>: a conceptual model that motivates the engineering.
+        It is not a proof of consciousness, and it is not established neuroscience.
+      </p>
+
+      <div class="data-grid">
+        <div class="data-card">
+          <div class="card-title">1. WHY WRITE A HYPOTHESIS AT ALL?</div>
+          <p>
+            Because architecture choices come from a worldview.
+            We publish the worldview explicitly so readers can:
+          </p>
+          <ul>
+            <li>separate “what we built” from “why we built it”</li>
+            <li>disagree with the theory while still testing the code</li>
+            <li>trace the lineage of ideas (attribution / prior art)</li>
+          </ul>
+
+          <details class="fold">
+            <summary>Glossary (click to expand)</summary>
+            <ul>
+              <li><strong>Pilot‑pulse:</strong> a moving “attention pointer” that traverses internal state.</li>
+              <li><strong>Manifold:</strong> a compressed state space that many observations map into.</li>
+              <li><strong>Topological recursion:</strong> re‑entering loops that refine a representation over time.</li>
+              <li><strong>Phase recurrence:</strong> returning to earlier structure without replaying the full history.</li>
+            </ul>
+          </details>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">2. THEORY OF THOUGHT (PROPOSED)</div>
+          <p>
+            <strong>Hypothesis:</strong> “Thought” is a stable re‑entrant loop: a pointer revisits internal structure, updates it,
+            and returns — like walking a circuit until the representation settles.
+          </p>
+          <ul>
+            <li>Memory is not a warehouse; it’s a <em>route</em> through compressed structure.</li>
+            <li>“Insight” is a loop that closes with lower error than it started.</li>
+            <li>Stability requires damping after high‑energy jumps (engineering analogy: “laminar settling”).</li>
+          </ul>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">3. SELF‑CONSCIOUSNESS (SPECULATIVE)</div>
+          <p>
+            <strong>Hypothesis:</strong> self‑consciousness emerges when a system can model <em>its own internal trajectory</em>
+            (the pilot‑pulse), not just the external world.
+          </p>
+          <ul>
+            <li>A persistent self‑model: “what state am I in?”</li>
+            <li>Counterfactual simulation: “what state will I be in if I do X?”</li>
+            <li>Recursion: the model can include its own model as an object of prediction</li>
+          </ul>
+          <p class="micro">
+            This is a framing, not a claim that INSTNCT is conscious.
+          </p>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">4. TERMINAL LUCIDITY (VERY SPECULATIVE)</div>
+          <p>
+            Terminal lucidity is a reported phenomenon where people show unexpected clarity near death.
+            We do <strong>not</strong> claim an explanation — only a possible analogy.
+          </p>
+          <ul>
+            <li><strong>Hypothesis:</strong> if certain “gates” normally suppress unstable states, a breakdown of gating
+              could temporarily increase integration before collapse.</li>
+            <li>In the analogy: a late “jump” briefly unlocks a wider manifold traversal — then the system destabilizes.</li>
+          </ul>
+          <p class="micro">
+            This is not medical advice and not clinically validated. It’s a research conjecture about control systems.
+          </p>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">5. FALSIFIABLE PREDICTIONS (WHAT WOULD CONVINCE US)</div>
+          <ul>
+            <li>Measurable stability regimes that match “settling after jumps” behavior across tasks</li>
+            <li>Ablations show that recurrence + damping are necessary for long‑range retention</li>
+            <li>Self‑modeling additions improve planning/consistency without inflating compute linearly</li>
+          </ul>
+          <p class="micro">
+            If the experiments don’t support these, we revise or discard the hypothesis.
+          </p>
+        </div>
+      </div>
+    </div>    <div id="data-partners">
+      <h1>PARTNERS</h1>
+      <p style="margin-top: 8px; opacity: 0.92;">
+        I’m looking for a <strong>small founding‑level team</strong> to turn this from a fragile prototype into a clean,
+        reproducible research artifact — and then, optionally, a real product.
+        <span class="micro">(Not hiring employees yet; partnership/collaboration first.)</span>
+      </p>
+
+      <div class="team-intro">
+        <div class="data-card">
+          <div class="card-title">THE ASK (CLEAR + SPECIFIC)</div>
+          <p>
+            I have the architecture, the direction, and the public snapshot.
+            What’s missing is execution bandwidth: packaging, benchmarks, performance engineering, and legal structure.
+          </p>
+          <ul>
+            <li><strong>Goal:</strong> make AI memory + inference cheaper on consumer hardware (edge‑leaning, not “API‑only”).</li>
+            <li><strong>Ethos:</strong> decentralization + safety dampers, not centralized black boxes.</li>
+          </ul>
+        </div>
+      </div>
 
       <div class="team-grid">
-
-        <!-- [1] FOUNDING ML / SYSTEMS ENGINEER -->
-        <div class="role-card core">
-          <div class="role-head">
-            <!-- ICON: CHIP -->
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
-              <rect x="9" y="9" width="6" height="6"></rect>
-              <line x1="9" y1="1" x2="9" y2="4"></line>
-              <line x1="15" y1="1" x2="15" y2="4"></line>
-              <line x1="9" y1="20" x2="9" y2="23"></line>
-              <line x1="15" y1="20" x2="15" y2="23"></line>
-              <line x1="20" y1="9" x2="23" y2="9"></line>
-              <line x1="20" y1="14" x2="23" y2="14"></line>
-              <line x1="1" y1="9" x2="4" y2="9"></line>
-              <line x1="1" y1="14" x2="4" y2="14"></line>
-            </svg>
-            <h3>[1] FOUNDING ML / SYSTEMS ENGINEER</h3>
+        <div class="role-card">
+          <h3>Founding Engineer (Core)</h3>
+          <div class="role-tag">Python / PyTorch / Systems Mindset</div>
+          <div class="role-note">
+            Owns the “boring but critical” layer: reproducible env, config system, benchmark harness, CI smoke tests,
+            packaging, and performance profiling.
           </div>
-          <p class="role-tag">&gt; NEED NOW: IMPLEMENTATION RIGOR</p>
-          <ul>
-            <li>Python + PyTorch engineering (prototype → clean library)</li>
-            <li>Numerical stability, tests, and reproducible experiments</li>
-            <li>Benchmark harnesses, ablations, and baselines</li>
-          </ul>
-          <p class="role-note"><strong>One strong person here can carry 80% of the early technical work.</strong></p>
+          <div class="role-quote">Deliverable: anyone can run the benchmark pack and get comparable logs.</div>
         </div>
 
-        <!-- [2] PERFORMANCE / KERNEL ENGINEER (OPTIONAL, HIGH LEVERAGE) -->
         <div class="role-card">
-          <div class="role-head">
-            <!-- ICON: ZAP / GAUGE -->
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M20 13a8 8 0 1 0-16 0"></path>
-              <line x1="12" y1="13" x2="16" y2="9"></line>
-              <line x1="12" y1="21" x2="12" y2="21"></line>
-            </svg>
-            <h3>[2] PERFORMANCE / KERNEL ENGINEER</h3>
+          <h3>Performance Engineer (Optional, High Impact)</h3>
+          <div class="role-tag">CUDA / Triton / Kernel Optimization</div>
+          <div class="role-note">
+            Turns the architecture into something brutally efficient at inference.
+            Focus: memory bandwidth, fused ops, low‑precision stability, and profiling.
           </div>
-          <p class="role-tag">&gt; NEXT: EDGE SPEED / INFERENCE PATH</p>
-          <ul>
-            <li>Profiling (PyTorch, CUDA), memory layout, throughput tuning</li>
-            <li>Triton / CUDA kernels (optional but ideal)</li>
-            <li>Turning “inference efficiency” from hypothesis → measured curves</li>
-          </ul>
-          <p class="role-note" style="opacity:0.85;">If you exist, you’re rare. This role is optional early, huge later.</p>
+          <div class="role-quote">Deliverable: “same accuracy, less latency / VRAM / watts.”</div>
         </div>
 
-        <!-- [3] LEGAL / IP COUNSEL (PART-TIME) -->
         <div class="role-card">
-          <div class="role-head">
-            <!-- ICON: SHIELD -->
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
-            <h3>[3] LEGAL / IP COUNSEL</h3>
+          <h3>Legal / IP Partner (Part-time)</h3>
+          <div class="role-tag">Open-source licensing + Commercial terms</div>
+          <div class="role-note">
+            Clarifies the rules: noncommercial vs commercial licensing, contribution terms, NDA templates (when needed),
+            and basic company formation readiness.
           </div>
-          <p class="role-tag">&gt; NEED NOW: STRUCTURE + DEFENSE</p>
+          <div class="role-quote">
+            Do we need 2 lawyers? Usually not at day‑0 — one strong startup/IP counsel is enough until patents or major deals appear.
+          </div>
+        </div>
+
+        <div class="role-card">
+          <h3>Research / Evaluation Collaborator (Optional)</h3>
+          <div class="role-tag">Benchmarks / Ablations / Writing</div>
+          <div class="role-note">
+            Helps design fair baselines, ablations, and publishes clean writeups.
+            Keeps the work credible, not hype-driven.
+          </div>
+          <div class="role-quote">Deliverable: a short paper‑style report + reproducible artifacts.</div>
+        </div>
+      </div>
+
+      <div class="team-footer">
+        <div class="data-card">
+          <div class="card-title">HOW TO REACH OUT</div>
+          <p>
+            Start lightweight: send a short note with your background + what you’d like to tackle.
+            Don’t send proprietary/confidential info yet.
+          </p>
           <ul>
-            <li>License & commercial terms (PolyForm NC + commercial pathway)</li>
-            <li>Trademark hygiene (VRAXION / INSTNCT)</li>
-            <li>Partnership agreements, NDAs, contributor terms</li>
+            <li><strong>Email:</strong> <a href="mailto:kenessy.dani@gmail.com">kenessy.dani@gmail.com</a></li>
+            <li><strong>Repo:</strong> <a href="https://github.com/Kenessy/VRAXION" target="_blank" rel="noopener">https://github.com/Kenessy/VRAXION</a></li>
+            <li><strong>Suggested next step:</strong> pick a 7–14 day “trial milestone” (small deliverable) to validate fit.</li>
           </ul>
-          <p class="role-note" style="opacity:0.85;">
-            <strong>Do we need two lawyers?</strong> Usually no — one good counsel can cover licensing + contracts.
-            If we pursue patents (especially US), we may add a specialized patent attorney for that track.
+          <p class="micro">
+            If collaboration requires discussing non-public details, we can use a simple mutual NDA drafted by counsel.
+            The public snapshot stays public — the NDA only covers new, undisclosed work.
           </p>
         </div>
-
-        <!-- [0] PRINCIPAL ARCHITECT -->
-        <div class="role-card highlight">
-          <div class="role-head">
-            <!-- ICON: SIGNAL -->
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--white)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-            </svg>
-            <h3>[0] PRINCIPAL ARCHITECT — DANIEL</h3>
-          </div>
-          <p class="role-tag" style="color: var(--white);">&gt; COVERS: ARCHITECTURE + RESEARCH DIRECTION</p>
-          <p class="role-quote">"I see the gravity before the equations."</p>
-          <ul>
-            <li><strong>Invention:</strong> originating the architecture + hypothesis framing.</li>
-            <li><strong>Direction:</strong> defining testable milestones and failure modes.</li>
-            <li><strong>Execution:</strong> writing, experiments, and keeping the work honest.</li>
-          </ul>
-        </div>
-
       </div>
-
-      <div class="data-card" style="margin-top: 18px;">
-        <div class="card-header">
-          <!-- ICON: LIST -->
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-          </svg>
-          <h3 class="card-title">OTHER ROLES (LATER / OPTIONAL)</h3>
-        </div>
-        <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-          <li><strong>Research Engineer:</strong> running ablations, baselines, and dataset hygiene.</li>
-          <li><strong>Technical Writer:</strong> turning docs into clear, defensible papers/notes.</li>
-          <li><strong>Ops / DevEx:</strong> CI, packaging, reproducible environments.</li>
-        </ul>
-      </div>
-
-      <p style="margin-top: 18px; color: var(--white); font-size: 11px; opacity: 0.92;">
-        <strong>Contact:</strong> If you want to collaborate, <a href="https://github.com/Kenessy/VRAXION/issues/new"
-          target="_blank" rel="noopener">open a GitHub issue</a> with the title
-        <strong>PARTNERSHIP — [ROLE]</strong> and a short summary of your background.
+    </div>    <div id="data-license">
+      <h1>LICENSE</h1>
+      <p style="margin-top: 8px; opacity: 0.92;">
+        VRAXION is published under <strong>PolyForm Noncommercial 1.0.0</strong>.
+        This is intentional: we want research use, attribution, and collaboration — not silent commercial extraction.
       </p>
-    </div>
-    <div id="data-license">
-      <h1>LICENSE // POLYFORM NC 1.0.0</h1>
-      <p>This project is protected under the <strong>PolyForm Noncommercial License 1.0.0</strong>.</p>
 
       <div class="data-grid">
-
-        <!-- CARD 1: RIGHTS -->
         <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: KEY -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path
-                d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4">
-              </path>
-            </svg>
-            <h3 class="card-title">1. RIGHTS GRANTED</h3>
-          </div>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>Copyright:</strong> You may use, copy, and modify for permitted purposes.</li>
-            <li><strong>Distribution:</strong> You may distribute copies (including modified versions) if you include
-              this license.</li>
-            <li><strong>Patent:</strong> Includes patent grant for claims necessary to use the software.</li>
+          <div class="card-title">1. NONCOMMERCIAL USE (ALLOWED)</div>
+          <ul>
+            <li>Personal research, academic research, evaluation, and prototypes are allowed.</li>
+            <li>You may modify and redistribute (with required notices) under the same license terms.</li>
+            <li>You must include the license + notices in distributions.</li>
           </ul>
-        </div>
-
-        <!-- CARD 2: PURPOSES -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: CHECK/GLOBE -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="2" y1="12" x2="22" y2="12"></line>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
-              </path>
-            </svg>
-            <h3 class="card-title">2. PERMITTED PURPOSES</h3>
-          </div>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>Noncommercial:</strong> Any non-commercial use is allowed.</li>
-            <li><strong>Personal:</strong> Research, study, hobbies, and testing are allowed.</li>
-            <li><strong>Education/Charity:</strong> Use by schools, non-profits, and governments is permitted.</li>
-          </ul>
-        </div>
-
-        <!-- CARD 3: LIMITATIONS -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: LOCK -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-            <h3 class="card-title">3. LIMITATIONS</h3>
-          </div>
-          <ul style="margin: 0; padding-left: 20px; color: var(--white);">
-            <li><strong>No Sublicensing:</strong> You cannot transfer your license rights to others.</li>
-            <li><strong>Patent Defense:</strong> If you sue the licensor for patent infringement, your license ends.
-            </li>
-          </ul>
-        </div>
-
-        <!-- CARD 4: TERMINATION -->
-        <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: ALERT -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            <h3 class="card-title" style="color: var(--purple);">4. TERMINATION & LIABILITY</h3>
-          </div>
-          <p style="margin: 0; color: var(--white); font-size: 11px;">
-            Violating terms terminates the license immediately (unless fixed within 32 days of notice).
-            <strong>Software is provided AS-IS with NO LIABILITY.</strong>
+          <p class="micro">
+            Always check the actual <span class="kbd">LICENSE</span> and <span class="kbd">NOTICE</span> files — they are the source of truth.
           </p>
         </div>
 
-        <!-- CARD 5: COMMERCIAL LICENSING -->
         <div class="data-card">
-          <div class="card-header">
-            <!-- ICON: BRIEFCASE -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path>
-              <path d="M2 13h20"></path>
-            </svg>
-            <h3 class="card-title">5. COMMERCIAL USE</h3>
-          </div>
-          <p style="margin: 0; color: var(--white); font-size: 11px;">
-            <strong>Commercial use is not permitted</strong> under the PolyForm Noncommercial License.
-            If you want to use INSTNCT commercially, you’ll need a separate commercial license.
-            <span style="opacity:0.85;">Details:</span>
-            <a href="https://github.com/Kenessy/VRAXION/blob/main/COMMERCIAL_LICENSE.md" target="_blank" rel="noopener">COMMERCIAL_LICENSE.md</a>
+          <div class="card-title">2. COMMERCIAL USE (REQUIRES PERMISSION)</div>
+          <p>
+            Commercial use is not granted by default. For commercial terms:
+          </p>
+          <ul>
+            <li>Read <span class="kbd">COMMERCIAL_LICENSE.md</span></li>
+            <li>Email: <a href="mailto:kenessy.dani@gmail.com">kenessy.dani@gmail.com</a></li>
+          </ul>
+          <p class="micro">
+            If a mirror/metadata field ever contradicts the repo license, treat the repo’s LICENSE/NOTICE as authoritative.
           </p>
         </div>
 
+        <div class="data-card">
+          <div class="card-title">3. TERMINATION & CURE</div>
+          <p>
+            If you violate the license, your rights terminate — but there is a cure window.
+          </p>
+          <ul>
+            <li>Rights are reinstated if the violation is fixed within the stated cure period.</li>
+            <li>Repeated violations may permanently terminate your rights.</li>
+          </ul>
+        </div>
+
+        <div class="data-card">
+          <div class="card-title">4. CITATION</div>
+          <p>
+            If you use this work in research, please cite the Zenodo archive:
+          </p>
+          <ul>
+            <li><a href="https://doi.org/10.5281/zenodo.18332532" target="_blank" rel="noopener">10.5281/zenodo.18332532</a></li>
+          </ul>
+        </div>
       </div>
-    </div>
+    </div></div>
   </div>
 
   <script src="app.js"></script>
