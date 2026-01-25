@@ -2,6 +2,7 @@ import os
 import time
 import math
 import json
+import hashlib
 import random
 from itertools import count
 import shutil
@@ -97,6 +98,9 @@ PTR_VEL_CAP = CFG.ptr_vel_cap
 PTR_VEL_SCALE = CFG.ptr_vel_scale
 PTR_LOCK = CFG.ptr_lock
 PTR_LOCK_VALUE = CFG.ptr_lock_value
+PTR_ANCHOR_CONF_MIN = float(os.environ.get("TP6_ANCHOR_CONF_MIN", "0.9"))
+PTR_ANCHOR_MIN_STEP = float(os.environ.get("TP6_ANCHOR_MIN_STEP", "0"))
+PTR_ANCHOR_CLICK_INJECT = bool(int(os.environ.get("TP6_ANCHOR_CLICK_INJECT", "0")))
 PTR_UPDATE_EVERY = CFG.ptr_update_every
 PTR_UPDATE_AUTO = CFG.ptr_update_auto
 PTR_UPDATE_MIN = CFG.ptr_update_min
@@ -169,6 +173,17 @@ MITOSIS_STALL_DELTA = float(os.environ.get("TP6_MITOSIS_STALL_DELTA", "0.005"))
 MITOSIS_IMBALANCE = float(os.environ.get("TP6_MITOSIS_IMBALANCE", "0.5"))
 MITOSIS_EXIT_CODE = int(os.environ.get("TP6_MITOSIS_EXIT_CODE", "86"))
 MITOSIS_CKPT_PATH = os.environ.get("TP6_MITOSIS_CKPT", "")
+METABOLIC_TELEMETRY = os.environ.get("TP6_METABOLIC_TELEMETRY", "0") == "1"
+METABOLIC_HUNGER = os.environ.get("TP6_METABOLIC_HUNGER", "0") == "1"
+METABOLIC_COST_COEFF = float(os.environ.get("TP6_METABOLIC_COST_COEFF", "0.0001"))
+METABOLIC_SIM_THRESH = float(os.environ.get("TP6_METABOLIC_SIM_THRESH", "0.98"))
+METABOLIC_EVERY = int(os.environ.get("TP6_METABOLIC_EVERY", "500"))
+METABOLIC_IDLE_STEPS = int(os.environ.get("TP6_METABOLIC_IDLE_STEPS", "2000"))
+HIBERNATE_ENABLED = os.environ.get("TP6_HIBERNATE", "0") == "1"
+HIBERNATE_MODE = os.environ.get("TP6_HIBERNATE_MODE", "shadow").strip().lower()
+HIBERNATE_IDLE_STEPS = int(os.environ.get("TP6_HIBERNATE_IDLE_STEPS", str(METABOLIC_IDLE_STEPS)))
+HIBERNATE_EVERY = int(os.environ.get("TP6_HIBERNATE_EVERY", "50"))
+HIBERNATE_DIR = os.environ.get("TP6_HIBERNATE_DIR", "hibernation")
 PRECISION = CFG.precision
 DTYPE = CFG.dtype
 USE_AMP = CFG.use_amp
@@ -248,12 +263,115 @@ class VCogGovernor:
                 prg = None
         if prg is None:
             prg = max(0.0, min(1.0, ident / max(self.id_target, 1e-6))) * 100.0
+        orb = telemetry.get("orb")
+        rd = telemetry.get("rd")
+        ac = telemetry.get("ac")
+        try:
+            orb = int(orb) if orb is not None else 0
+        except Exception:
+            orb = 0
+        try:
+            rd = float(rd) if rd is not None else 0.0
+        except Exception:
+            rd = 0.0
+        try:
+            ac = int(ac) if ac is not None else 0
+        except Exception:
+            ac = 0
 
         header = (
-            f"V_COG[PRGRS:{prg:.1f}% EPI:{epi:.2f} LOCKS:{lk:.2f} FLOWS:{fl:.2f} "
+            f"V_COG[PRGRS:{prg:.1f}% ORB:{orb} RD:{rd:.2e} AC:{ac} EPI:{epi:.2f} "
+            f"LOCKS:{lk:.2f} FLOWS:{fl:.2f} "
             f"SNAPS:{sn:.2f} IDENT:{ident:.3f}]"
         )
         return header
+
+
+def _compute_expert_similarity_stats(model, sim_thresh):
+    head = getattr(model, "head", None)
+    experts = getattr(head, "experts", None) if head is not None else None
+    if not experts:
+        return None
+    with torch.no_grad():
+        flat = []
+        for expert in experts:
+            vec = expert.weight.detach().float().reshape(-1)
+            if expert.bias is not None:
+                vec = torch.cat([vec, expert.bias.detach().float().reshape(-1)])
+            flat.append(vec)
+        mat = torch.stack(flat, dim=0)
+        mat = F.normalize(mat, dim=1)
+        sim = mat @ mat.T
+        upper = torch.triu(sim, diagonal=1)
+        if upper.numel() == 0:
+            return None
+        max_sim = float(upper.max().item())
+        count = int((upper > sim_thresh).sum().item())
+        flat_idx = int(torch.argmax(upper).item())
+        i = flat_idx // upper.size(1)
+        j = flat_idx % upper.size(1)
+    return max_sim, count, (int(i), int(j))
+
+
+def _resolve_hibernate_dir(base_dir, root_dir):
+    path = base_dir
+    if not os.path.isabs(path):
+        path = os.path.join(root_dir, base_dir)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def _extract_expert_state(head, expert_id):
+    if head is None:
+        return None
+    experts = getattr(head, "experts", None)
+    if experts is None or expert_id >= len(experts):
+        return None
+    state = {}
+    with torch.no_grad():
+        exp_state = experts[expert_id].state_dict()
+        for name, tensor in exp_state.items():
+            state[name] = tensor.detach().cpu()
+    return state
+
+
+def _zero_expert_weights(head, expert_id):
+    if head is None:
+        return False
+    experts = getattr(head, "experts", None)
+    if experts is None or expert_id >= len(experts):
+        return False
+    with torch.no_grad():
+        for param in experts[expert_id].parameters():
+            param.zero_()
+    return True
+
+
+def _hash_state_dict(state):
+    if not state:
+        return None
+    hasher = hashlib.sha256()
+    for key in sorted(state.keys()):
+        tensor = state[key]
+        hasher.update(key.encode("utf-8"))
+        if torch.is_tensor(tensor):
+            arr = tensor.contiguous().cpu().numpy()
+            hasher.update(arr.tobytes())
+        else:
+            hasher.update(repr(tensor).encode("utf-8"))
+    return hasher.hexdigest()
+
+
+def _save_expert_snapshot(state, path):
+    torch.save(state, path)
+    return _hash_state_dict(state)
+
+
+def _load_expert_snapshot(path):
+    if not os.path.exists(path):
+        return None, None
+    state = torch.load(path, map_location="cpu")
+    return state, _hash_state_dict(state)
 MI_SHUFFLE = CFG.mi_shuffle
 STATE_LOOP_METRICS = CFG.state_loop_metrics
 STATE_LOOP_EVERY = CFG.state_loop_every
@@ -835,6 +953,7 @@ class AbsoluteHallway(nn.Module):
             ptr_float = torch.rand(B, device=device, dtype=ptr_dtype) * (ring_range - 1)
         # last K pointers tensorized (initialize from starting pointer)
         ptr_int_init = torch.floor(torch.remainder(ptr_float, ring_range)).clamp(0, ring_range - 1).long()
+        ptr_int = ptr_int_init
         last_ptrs = ptr_int_init.view(B, 1).repeat(1, self.blur_window)
         hist = torch.zeros(self.pointer_hist_bins, device=device, dtype=torch.long)
         satiety_exited = torch.zeros(B, device=device, dtype=torch.bool)
@@ -863,6 +982,28 @@ class AbsoluteHallway(nn.Module):
         ctrl_inertia_mean = None
         ctrl_deadzone_mean = None
         ctrl_walk_mean = None
+        # Dual-pointer (anchor + residual) state for Phase A stereoscopic foundation.
+        loss_ema = getattr(self, "loss_ema", None)
+        confidence = 0.0
+        if loss_ema is not None:
+            confidence = 1.0 / (1.0 + float(loss_ema))
+        kernel_width = max(self.gauss_tau, 1e-6)
+        min_step_floor = max(
+            ring_range * torch.finfo(torch.float64).eps,
+            kernel_width * 1e-3,
+        )
+        min_step = max(min_step_floor, float(self.ptr_stride))
+        if PTR_ANCHOR_MIN_STEP > 0:
+            # Allow a smaller actuation lattice for Phase A click testing.
+            min_step = max(min_step_floor, PTR_ANCHOR_MIN_STEP)
+        self.ptr_min_step = float(min_step)
+        ptr_anchor = ptr_float.to(torch.float64)
+        ptr_anchor = torch.remainder(torch.round(ptr_anchor / min_step) * min_step, ring_range)
+        ptr_residual = ptr_float.to(torch.float64) - ptr_anchor
+        ptr_float = (ptr_anchor + ptr_residual).to(ptr_dtype)
+        res_mean_init = float(ptr_residual.abs().mean().item())
+        self.ptr_residual_mean = res_mean_init
+        self.ptr_orbit = 2 if res_mean_init >= (min_step * 0.1) else 1
         # Internal state loop metrics (A-B-A patterns in hidden state modes)
         if self.state_loop_metrics:
             loop_samples = B if self.state_loop_samples <= 0 else min(B, self.state_loop_samples)
@@ -881,6 +1022,7 @@ class AbsoluteHallway(nn.Module):
             active_mask = ~satiety_exited
             if not active_mask.any():
                 break
+            anchor_clicks = 0
             # Per-step magnitude accumulator for adaptive decay.
             h_abs_sum_step = 0.0
             h_abs_count_step = 0
@@ -1041,6 +1183,13 @@ class AbsoluteHallway(nn.Module):
             update_allowed = (t % self.ptr_update_every) == 0
             if self.ptr_gate_mode == "steps" and self.ptr_gate_steps:
                 update_allowed = update_allowed and (t in self.ptr_gate_steps)
+            self.ptr_update_allowed = bool(update_allowed)
+            self.ptr_update_blocked = bool(
+                self.ptr_lock
+                or self.time_pointer
+                or not update_allowed
+                or (self.ptr_warmup_steps > 0 and t < self.ptr_warmup_steps)
+            )
             if self.time_pointer:
                 # Deterministic pointer: follow time index directly.
                 ptr_float = torch.full((B,), float(t % ring_range), device=device, dtype=ptr_dtype)
@@ -1125,152 +1274,176 @@ class AbsoluteHallway(nn.Module):
                     ptr_vel = self.ptr_vel_decay * ptr_vel + (1.0 - self.ptr_vel_decay) * torque
                     ptr_float = prev_ptr + ptr_vel
                 # Optional learned soft gate: modulates how strongly the pointer updates.
-                if self.ptr_soft_gate and self.gate_head is not None:
-                    gate = torch.sigmoid(self.gate_head(upd)).squeeze(1)
-                    delta_gate = self.wrap_delta(prev_ptr, ptr_float, ring_range)
-                    ptr_float = torch.remainder(prev_ptr + gate * delta_gate, ring_range)
+            if self.ptr_soft_gate and self.gate_head is not None:
+                gate = torch.sigmoid(self.gate_head(upd)).squeeze(1)
+                delta_gate = self.wrap_delta(prev_ptr, ptr_float, ring_range)
+                ptr_float = torch.remainder(prev_ptr + gate * delta_gate, ring_range)
+            # Dual-pointer annealing: accumulate residuals and click anchor on min_step lattice.
+            delta_step = self.wrap_delta(prev_ptr, ptr_float, ring_range)
+            delta_step = delta_step * active_mask.to(delta_step.dtype)
+            ptr_residual = ptr_residual + delta_step.to(ptr_residual.dtype)
+            if PTR_ANCHOR_CLICK_INJECT and t == 0:
+                ptr_residual = ptr_residual + min_step
+            if confidence >= PTR_ANCHOR_CONF_MIN:
+                step_units = torch.floor(ptr_residual.abs() / min_step) * torch.sign(ptr_residual)
+                step_units = torch.clamp(step_units, -1.0, 1.0)
+                click_mask = step_units != 0
+                if click_mask.any():
+                    anchor_clicks = int(click_mask.sum().item())
+                    ptr_anchor = torch.remainder(ptr_anchor + step_units * min_step, ring_range)
+                    ptr_residual = ptr_residual - step_units * min_step
+            ptr_float = torch.remainder(ptr_anchor + ptr_residual, ring_range)
+            ptr_residual = self.wrap_delta(ptr_anchor, ptr_float, ring_range).to(ptr_residual.dtype)
+            ptr_float = ptr_float.to(ptr_dtype)
+            self.ptr_anchor_clicks = anchor_clicks
+        if self.ptr_lock or self.time_pointer or not update_allowed or (self.ptr_warmup_steps > 0 and t < self.ptr_warmup_steps):
+            ptr_anchor = torch.remainder(torch.round(ptr_float.to(torch.float64) / min_step) * min_step, ring_range)
+            ptr_residual = self.wrap_delta(ptr_anchor, ptr_float.to(torch.float64), ring_range)
             if self.ptr_vel_enabled:
                 ptr_vel = torch.where(active_mask, ptr_vel, torch.zeros_like(ptr_vel))
             ptr_float = torch.where(active_mask, ptr_float, prev_ptr)
-            # hard clamp for safety (keeps pointer in-bounds)
-            ptr_float = torch.nan_to_num(ptr_float, nan=0.0, posinf=ring_range - 1, neginf=0.0)
-            ptr_float = torch.remainder(ptr_float, ring_range)
-            nan_guard("ptr_float", ptr_float, t)
-            # movement cost (wrap-aware)
-            delta = torch.remainder(ptr_float - prev_ptr + ring_range / 2, ring_range) - ring_range / 2
-            movement_cost = movement_cost + delta.abs().mean()
+        # hard clamp for safety (keeps pointer in-bounds)
+        ptr_float = torch.nan_to_num(ptr_float, nan=0.0, posinf=ring_range - 1, neginf=0.0)
+        ptr_float = torch.remainder(ptr_float, ring_range)
+        nan_guard("ptr_float", ptr_float, t)
+        # movement cost (wrap-aware)
+        delta = torch.remainder(ptr_float - prev_ptr + ring_range / 2, ring_range) - ring_range / 2
+        movement_cost = movement_cost + delta.abs().mean()
 
-            # update history tensorized: prepend read ptr, drop last
-            ptr_float_phys = torch.remainder(ptr_float, ring_range)
-            ptr_base = torch.floor(ptr_float_phys)
-            if self.ptr_phantom and prev_ptr_int is not None:
-                # Dual-grid hysteresis: use an offset quantizer; if they disagree, hold prior bin.
-                ptr_off = torch.floor(torch.remainder(ptr_float_phys + self.ptr_phantom_off, ring_range))
-                agree = ptr_base == ptr_off
-                ptr_int = torch.where(agree, ptr_base, prev_ptr_int.float())
-            else:
-                ptr_int = ptr_base
-            ptr_int = torch.clamp(ptr_int, 0, ring_range - 1).long()
-            if self.ptr_phantom_read:
-                ptr_float_phys = ptr_int.float()
-            if DEBUG_STATS and (DEBUG_EVERY <= 0 or t % DEBUG_EVERY == 0):
-                stats = {
-                    "active_rate": float(active_mask.float().mean().item()),
-                    "ptr_float_min": float(ptr_float.min().item()),
-                    "ptr_float_max": float(ptr_float.max().item()),
-                    "ptr_float_mean": float(ptr_float.mean().item()),
-                    "ptr_float_std": float(ptr_float.std(unbiased=False).item()),
-                    "ptr_delta_abs_mean": float(delta.abs().mean().item()),
-                    "ptr_delta_abs_max": float(delta.abs().max().item()),
-                    "ptr_int_unique": int(ptr_int.unique().numel()),
-                    "ptr_int_min": int(ptr_int.min().item()),
-                    "ptr_int_max": int(ptr_int.max().item()),
-                    "cur_abs_max": float(cur.abs().max().item()),
-                    "cur_abs_mean": float(cur.abs().mean().item()),
-                    "upd_abs_max": float(upd.abs().max().item()),
-                    "upd_abs_mean": float(upd.abs().mean().item()),
-                }
-                if jump_p is not None:
-                    stats["jump_p_mean"] = float(jump_p.mean().item())
-                    stats["jump_p_min"] = float(jump_p.min().item())
-                    stats["jump_p_max"] = float(jump_p.max().item())
-                    stats["jump_p_std"] = float(jump_p.std(unbiased=False).item())
-                if move_mask is not None:
-                    stats["move_mask_mean"] = float(move_mask.mean().item())
-                    stats["move_mask_std"] = float(move_mask.std(unbiased=False).item())
-                if gate is not None:
-                    stats["gate_mean"] = float(gate.mean().item())
-                    stats["gate_std"] = float(gate.std(unbiased=False).item())
-                if self.ptr_vel_enabled:
-                    stats["ptr_vel_abs_mean"] = float(ptr_vel.abs().mean().item())
-                    stats["ptr_vel_abs_max"] = float(ptr_vel.abs().max().item())
-                    stats["ptr_vel_std"] = float(ptr_vel.std(unbiased=False).item())
-                if delta_pre is not None:
-                    stats["ptr_delta_raw_mean"] = float(delta_pre.abs().mean().item())
-                stats["ptr_update_every"] = int(self.ptr_update_every)
-                stats["ptr_soft_gate"] = int(self.ptr_soft_gate)
-                stats["ptr_vel_enabled"] = int(self.ptr_vel_enabled)
-                if self.ptr_edge_eps > 0.0:
-                    eps = self.ptr_edge_eps
-                    edge_mask = (ptr_float_phys < eps) | (ptr_float_phys > (ring_range - eps))
-                    stats["ptr_edge_rate"] = float(edge_mask.float().mean().item())
-                stats["ptr_kernel"] = self.ptr_kernel
-                self.debug_stats = stats
-            last_ptrs = torch.cat([ptr_read_int.view(B, 1), last_ptrs[:, :-1]], dim=1)
-            bins = torch.bucketize(ptr_int.float(), self.bin_edges.to(device)) - 1
-            bins = bins.clamp(0, self.pointer_hist_bins - 1)
-            # Count all samples this step; bincount avoids accidental batch collapse
-            if active_mask.any():
-                active_bins = bins[active_mask]
-                step_counts = torch.bincount(active_bins, minlength=self.pointer_hist_bins)
-            else:
-                step_counts = torch.zeros_like(hist)
-            hist = hist + step_counts
+        # update history tensorized: prepend read ptr, drop last
+        ptr_float_phys = torch.remainder(ptr_float, ring_range)
+        ptr_base = torch.floor(ptr_float_phys)
+        if self.ptr_phantom and prev_ptr_int is not None:
+            # Dual-grid hysteresis: use an offset quantizer; if they disagree, hold prior bin.
+            ptr_off = torch.floor(torch.remainder(ptr_float_phys + self.ptr_phantom_off, ring_range))
+            agree = ptr_base == ptr_off
+            ptr_int = torch.where(agree, ptr_base, prev_ptr_int.float())
+        else:
+            ptr_int = ptr_base
+        ptr_int = torch.clamp(ptr_int, 0, ring_range - 1).long()
+        if self.ptr_phantom_read:
+            ptr_float_phys = ptr_int.float()
+        res_mean = float(ptr_residual.abs().mean().item())
+        self.ptr_residual_mean = res_mean
+        self.ptr_orbit = 2 if res_mean >= (min_step * 0.1) else 1
+        if DEBUG_STATS and (DEBUG_EVERY <= 0 or t % DEBUG_EVERY == 0):
+            stats = {
+                "active_rate": float(active_mask.float().mean().item()),
+                "ptr_float_min": float(ptr_float.min().item()),
+                "ptr_float_max": float(ptr_float.max().item()),
+                "ptr_float_mean": float(ptr_float.mean().item()),
+                "ptr_float_std": float(ptr_float.std(unbiased=False).item()),
+                "ptr_delta_abs_mean": float(delta.abs().mean().item()),
+                "ptr_delta_abs_max": float(delta.abs().max().item()),
+                "ptr_int_unique": int(ptr_int.unique().numel()),
+                "ptr_int_min": int(ptr_int.min().item()),
+                "ptr_int_max": int(ptr_int.max().item()),
+                "cur_abs_max": float(cur.abs().max().item()),
+                "cur_abs_mean": float(cur.abs().mean().item()),
+                "upd_abs_max": float(upd.abs().max().item()),
+                "upd_abs_mean": float(upd.abs().mean().item()),
+            }
+            if jump_p is not None:
+                stats["jump_p_mean"] = float(jump_p.mean().item())
+                stats["jump_p_min"] = float(jump_p.min().item())
+                stats["jump_p_max"] = float(jump_p.max().item())
+                stats["jump_p_std"] = float(jump_p.std(unbiased=False).item())
+            if move_mask is not None:
+                stats["move_mask_mean"] = float(move_mask.mean().item())
+                stats["move_mask_std"] = float(move_mask.std(unbiased=False).item())
+            if gate is not None:
+                stats["gate_mean"] = float(gate.mean().item())
+                stats["gate_std"] = float(gate.std(unbiased=False).item())
+            if self.ptr_vel_enabled:
+                stats["ptr_vel_abs_mean"] = float(ptr_vel.abs().mean().item())
+                stats["ptr_vel_abs_max"] = float(ptr_vel.abs().max().item())
+                stats["ptr_vel_std"] = float(ptr_vel.std(unbiased=False).item())
+            if delta_pre is not None:
+                stats["ptr_delta_raw_mean"] = float(delta_pre.abs().mean().item())
+            stats["ptr_update_every"] = int(self.ptr_update_every)
+            stats["ptr_soft_gate"] = int(self.ptr_soft_gate)
+            stats["ptr_vel_enabled"] = int(self.ptr_vel_enabled)
+            if self.ptr_edge_eps > 0.0:
+                eps = self.ptr_edge_eps
+                edge_mask = (ptr_float_phys < eps) | (ptr_float_phys > (ring_range - eps))
+                stats["ptr_edge_rate"] = float(edge_mask.float().mean().item())
+            stats["ptr_kernel"] = self.ptr_kernel
+            self.debug_stats = stats
+        last_ptrs = torch.cat([ptr_read_int.view(B, 1), last_ptrs[:, :-1]], dim=1)
+        bins = torch.bucketize(ptr_int.float(), self.bin_edges.to(device)) - 1
+        bins = bins.clamp(0, self.pointer_hist_bins - 1)
+        # Count all samples this step; bincount avoids accidental batch collapse
+        if active_mask.any():
+            active_bins = bins[active_mask]
+            step_counts = torch.bincount(active_bins, minlength=self.pointer_hist_bins)
+        else:
+            step_counts = torch.zeros_like(hist)
+        hist = hist + step_counts
 
-            # Dynamic pointer trace metrics (only count active samples)
-            if prev_ptr_int is None:
-                prev_ptr_int = ptr_int
-                prev_prev_ptr_int = ptr_int
-                dwell_len = torch.where(active_mask, torch.ones_like(dwell_len), dwell_len)
-                max_dwell = torch.maximum(max_dwell, dwell_len)
-            else:
-                flip = active_mask & (ptr_int != prev_ptr_int)
-                flip_count = flip_count + flip.long()
-                # Dwell length updates only for active samples
-                dwell_len = torch.where(
-                    active_mask,
-                    torch.where(flip, torch.ones_like(dwell_len), dwell_len + 1),
-                    dwell_len,
-                )
-                max_dwell = torch.maximum(max_dwell, dwell_len)
-                pingpong = active_mask & (ptr_int == prev_prev_ptr_int) & (ptr_int != prev_ptr_int)
-                pingpong_count = pingpong_count + pingpong.long()
-                prev_prev_ptr_int = prev_ptr_int
-                prev_ptr_int = ptr_int
-            total_active_steps += int(active_mask.sum().item())
-            active_steps_per_sample += active_mask.long()
+        # Dynamic pointer trace metrics (only count active samples)
+        if prev_ptr_int is None:
+            prev_ptr_int = ptr_int
+            prev_prev_ptr_int = ptr_int
+            dwell_len = torch.where(active_mask, torch.ones_like(dwell_len), dwell_len)
+            max_dwell = torch.maximum(max_dwell, dwell_len)
+        else:
+            flip = active_mask & (ptr_int != prev_ptr_int)
+            flip_count = flip_count + flip.long()
+            # Dwell length updates only for active samples
+            dwell_len = torch.where(
+                active_mask,
+                torch.where(flip, torch.ones_like(dwell_len), dwell_len + 1),
+                dwell_len,
+            )
+            max_dwell = torch.maximum(max_dwell, dwell_len)
+            pingpong = active_mask & (ptr_int == prev_prev_ptr_int) & (ptr_int != prev_ptr_int)
+            pingpong_count = pingpong_count + pingpong.long()
+            prev_prev_ptr_int = prev_ptr_int
+            prev_ptr_int = ptr_int
+        total_active_steps += int(active_mask.sum().item())
+        active_steps_per_sample += active_mask.long()
 
-            # Optional auto-adjust of pointer update cadence (simple EMA controller)
-            if self.ptr_update_auto and (t % self.ptr_update_every_step == 0) and total_active_steps > 0:
-                flip_rate = float(flip_count.sum().item() / max(1, total_active_steps))
-                if self.ptr_update_ema_state is None:
-                    ema = flip_rate
-                else:
-                    ema = self.ptr_update_ema * self.ptr_update_ema_state + (1.0 - self.ptr_update_ema) * flip_rate
-                self.ptr_update_ema_state = ema
-                # If flapping is high, slow down pointer updates (larger stride)
-                if ema > self.ptr_update_target_flip:
-                    self.ptr_update_every = min(self.ptr_update_max, self.ptr_update_every + 1)
-                elif ema < self.ptr_update_target_flip * 0.5:
-                    self.ptr_update_every = max(self.ptr_update_min, self.ptr_update_every - 1)
-
-            # satiety check (optionally soft slice readout)
-            if self.soft_readout:
-                k = self.soft_readout_k
-                offsets = torch.arange(-k, k + 1, device=device, dtype=ptr_float_phys.dtype)
-                pos_idx, w, _ = self._compute_kernel_weights(
-                    ptr_read_phys, offsets, ring_range, tau_override=self.soft_readout_tau
-                )
-                pos_idx_exp = pos_idx.unsqueeze(-1).expand(-1, -1, self.slot_dim)
-                gathered = state.gather(1, pos_idx_exp)
-                fused = (w.unsqueeze(-1) * gathered.to(w.dtype)).sum(dim=1)
-                if fused.dtype != state.dtype:
-                    fused = fused.to(state.dtype)
+        # Optional auto-adjust of pointer update cadence (simple EMA controller)
+        if self.ptr_update_auto and (t % self.ptr_update_every_step == 0) and total_active_steps > 0:
+            flip_rate = float(flip_count.sum().item() / max(1, total_active_steps))
+            if self.ptr_update_ema_state is None:
+                ema = flip_rate
             else:
-                gather_idx = last_ptrs.clamp(0, ring_range - 1)
-                gather_idx_exp = gather_idx.unsqueeze(-1).expand(-1, -1, self.slot_dim)
-                gathered = state.gather(1, gather_idx_exp)
-                fused = gathered.mean(dim=1)
-            if fused.dtype != h.dtype:
-                fused = fused.to(h.dtype)
-            read_vec = fused + h
-            expert_ids = self._map_expert_ids(ptr_int)
-            logits = self.head(read_vec, expert_ids)
-            nan_guard("logits_step", logits, t)
-            if satiety_enabled:
-                probs = torch.softmax(logits, dim=1)
-                confident = probs.max(dim=1).values > SATIETY_THRESH
-                satiety_exited = satiety_exited | confident
+                ema = self.ptr_update_ema * self.ptr_update_ema_state + (1.0 - self.ptr_update_ema) * flip_rate
+            self.ptr_update_ema_state = ema
+            # If flapping is high, slow down pointer updates (larger stride)
+            if ema > self.ptr_update_target_flip:
+                self.ptr_update_every = min(self.ptr_update_max, self.ptr_update_every + 1)
+            elif ema < self.ptr_update_target_flip * 0.5:
+                self.ptr_update_every = max(self.ptr_update_min, self.ptr_update_every - 1)
+
+        # satiety check (optionally soft slice readout)
+        if self.soft_readout:
+            k = self.soft_readout_k
+            offsets = torch.arange(-k, k + 1, device=device, dtype=ptr_float_phys.dtype)
+            pos_idx, w, _ = self._compute_kernel_weights(
+                ptr_read_phys, offsets, ring_range, tau_override=self.soft_readout_tau
+            )
+            pos_idx_exp = pos_idx.unsqueeze(-1).expand(-1, -1, self.slot_dim)
+            gathered = state.gather(1, pos_idx_exp)
+            fused = (w.unsqueeze(-1) * gathered.to(w.dtype)).sum(dim=1)
+            if fused.dtype != state.dtype:
+                fused = fused.to(state.dtype)
+        else:
+            gather_idx = last_ptrs.clamp(0, ring_range - 1)
+            gather_idx_exp = gather_idx.unsqueeze(-1).expand(-1, -1, self.slot_dim)
+            gathered = state.gather(1, gather_idx_exp)
+            fused = gathered.mean(dim=1)
+        if fused.dtype != h.dtype:
+            fused = fused.to(h.dtype)
+        read_vec = fused + h
+        expert_ids = self._map_expert_ids(ptr_int)
+        logits = self.head(read_vec, expert_ids)
+        nan_guard("logits_step", logits, t)
+        if satiety_enabled:
+            probs = torch.softmax(logits, dim=1)
+            confident = probs.max(dim=1).values > SATIETY_THRESH
+            satiety_exited = satiety_exited | confident
 
         # final readout
         if self.soft_readout:
@@ -1870,6 +2043,26 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
     model.last_eval_acc = None
     ratchet_streak = 0
     mitosis_acc_history = []
+    expert_last_used = []
+    last_hibernate_step = -1
+    hibernate_dir = None
+    head = getattr(model, "head", None)
+    if head is not None and HIBERNATE_ENABLED:
+        if not hasattr(head, "hibernation_state"):
+            head.hibernation_state = {}
+        if not hasattr(head, "hibernation_saved"):
+            head.hibernation_saved = 0
+        if not hasattr(head, "hibernation_fetched"):
+            head.hibernation_fetched = 0
+        if not hasattr(head, "hibernation_corrupt"):
+            head.hibernation_corrupt = 0
+        if not hasattr(head, "hibernation_drift"):
+            head.hibernation_drift = 0
+        head.hibernate_mode = HIBERNATE_MODE
+        head.hibernation_enabled = True
+    hibernation_state = head.hibernation_state if head is not None and HIBERNATE_ENABLED else {}
+    metabolic_stats = {"hgr": None, "prn": None, "prc": None, "prx": None, "idl": None}
+    last_metabolic_step = -1
     inertia_signal_streak = 0
     ratchet_allowed = RATCHET_ENABLED and not INERTIA_SIGNAL_ENABLED
     if PANIC_ENABLED:
@@ -2107,14 +2300,18 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                     loss = torch.stack(loss_parts).mean() + LAMBDA_MOVE * move_pen
                 else:
                     loss = criterion(outputs, targets) + LAMBDA_MOVE * move_pen
+                if METABOLIC_HUNGER:
+                    head = getattr(model, "head", None)
+                    num_experts = getattr(head, "num_experts", EXPERT_HEADS) if head is not None else EXPERT_HEADS
+                    loss = loss + (METABOLIC_COST_COEFF * float(num_experts))
+                loss_val = float(loss.item())
+                loss_ema = getattr(model, "loss_ema", None)
+                if loss_ema is None:
+                    loss_ema = loss_val
+                else:
+                    loss_ema = LOSS_EMA_BETA * loss_ema + (1.0 - LOSS_EMA_BETA) * loss_val
+                model.loss_ema = loss_ema
                 if INERTIA_SIGNAL_ENABLED:
-                    loss_val = float(loss.item())
-                    loss_ema = getattr(model, "loss_ema", None)
-                    if loss_ema is None:
-                        loss_ema = loss_val
-                    else:
-                        loss_ema = LOSS_EMA_BETA * loss_ema + (1.0 - LOSS_EMA_BETA) * loss_val
-                    model.loss_ema = loss_ema
                     confidence = 1.0 / (1.0 + loss_ema)
                     epi = confidence * confidence
                     model.ptr_inertia_epi = epi
@@ -2269,6 +2466,9 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                     "eval_acc": eval_acc_val,
                     "search": search_val,
                     "focus": float(focus_val) if focus_val is not None else 0.0,
+                    "orb": float(getattr(model, "ptr_orbit", 0) or 0),
+                    "rd": float(getattr(model, "ptr_residual_mean", 0.0) or 0.0),
+                    "ac": int(getattr(model, "ptr_anchor_clicks", 0) or 0),
                     "inertia": float(model.ptr_inertia),
                     "epi": float(getattr(model, "ptr_inertia_epi", 0.0) or 0.0),
                     "walk": float(model.ptr_walk_prob),
@@ -2293,6 +2493,90 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                 if inr_pre is None or inr_post is None:
                     inr_pre = float(model.ptr_inertia)
                     inr_post = float(model.ptr_inertia)
+                meta_text = ""
+                if METABOLIC_TELEMETRY or HIBERNATE_ENABLED:
+                    head = getattr(model, "head", None)
+                    num_experts = getattr(head, "num_experts", EXPERT_HEADS) if head is not None else EXPERT_HEADS
+                    if len(expert_last_used) < num_experts:
+                        expert_last_used.extend([None] * (num_experts - len(expert_last_used)))
+                    counts = getattr(model, "ptr_expert_counts", None)
+                    if counts is not None:
+                        for idx, count in enumerate(counts):
+                            if count > 0 and idx < len(expert_last_used):
+                                expert_last_used[idx] = step
+                    if METABOLIC_TELEMETRY and METABOLIC_EVERY > 0 and (step % METABOLIC_EVERY == 0 or last_metabolic_step < 0):
+                        sim_stats = _compute_expert_similarity_stats(model, METABOLIC_SIM_THRESH)
+                        if sim_stats is None:
+                            metabolic_stats["prn"] = None
+                            metabolic_stats["prc"] = None
+                            metabolic_stats["prx"] = None
+                        else:
+                            metabolic_stats["prn"], metabolic_stats["prc"], metabolic_stats["prx"] = sim_stats
+                        last_metabolic_step = step
+                    idle_count = 0
+                    if expert_last_used:
+                        for last in expert_last_used:
+                            if last is None or (step - last) >= METABOLIC_IDLE_STEPS:
+                                idle_count += 1
+                    metabolic_stats["idl"] = idle_count
+                    if METABOLIC_TELEMETRY:
+                        metabolic_stats["hgr"] = METABOLIC_COST_COEFF * float(num_experts)
+                    else:
+                        metabolic_stats["hgr"] = None
+                    if HIBERNATE_ENABLED and HIBERNATE_EVERY > 0 and (step % HIBERNATE_EVERY == 0 or last_hibernate_step < 0):
+                        if hibernate_dir is None:
+                            hibernate_dir = _resolve_hibernate_dir(HIBERNATE_DIR, ROOT)
+                        for idx, last in enumerate(expert_last_used):
+                            idle = last is None or (step - last) >= HIBERNATE_IDLE_STEPS
+                            meta = hibernation_state.get(idx)
+                            if idle:
+                                state = _extract_expert_state(head, idx)
+                                if state is None:
+                                    continue
+                                ram_hash = _hash_state_dict(state)
+                                if meta is not None:
+                                    saved_hash = meta.get("hash")
+                                    if saved_hash and ram_hash and saved_hash != ram_hash:
+                                        if head is not None:
+                                            head.hibernation_drift += 1
+                                path = meta.get("path") if meta is not None else None
+                                if not path:
+                                    path = os.path.join(hibernate_dir, f"expert_{idx}.pt")
+                                digest = _save_expert_snapshot(state, path)
+                                hibernation_state[idx] = {
+                                    "path": path,
+                                    "hash": digest,
+                                    "step": step,
+                                    "offloaded": False,
+                                }
+                                if head is not None:
+                                    head.hibernation_saved += 1
+                                if HIBERNATE_MODE == "offload":
+                                    if _zero_expert_weights(head, idx):
+                                        hibernation_state[idx]["offloaded"] = True
+                        last_hibernate_step = step
+                    hgr = metabolic_stats.get("hgr")
+                    prn = metabolic_stats.get("prn")
+                    prc = metabolic_stats.get("prc")
+                    prx = metabolic_stats.get("prx")
+                    idl = metabolic_stats.get("idl")
+                    prn_text = "-" if prn is None else f"{prn:.2f}"
+                    prc_text = "-" if prc is None else f"{prc:d}"
+                    prx_text = "-" if prx is None else f"{prx[0]}-{prx[1]}"
+                    idl_text = "-" if idl is None else f"{idl:d}"
+                    hgr_text = "-" if hgr is None else f"{hgr:.4f}"
+                    hibernation_saved = getattr(head, "hibernation_saved", 0) if head is not None else 0
+                    hibernation_fetched = getattr(head, "hibernation_fetched", 0) if head is not None else 0
+                    hibernation_corrupt = getattr(head, "hibernation_corrupt", 0) if head is not None else 0
+                    hibernation_drift = getattr(head, "hibernation_drift", 0) if head is not None else 0
+                    hbr_text = "-" if not HIBERNATE_ENABLED else f"{hibernation_saved:d}"
+                    hbf_text = "-" if not HIBERNATE_ENABLED else f"{hibernation_fetched:d}"
+                    hibc_text = "-" if not HIBERNATE_ENABLED else f"{hibernation_corrupt:d}"
+                    hibd_text = "-" if not HIBERNATE_ENABLED else f"{hibernation_drift:d}"
+                    meta_text = (
+                        f" META[HGR:{hgr_text} PRN:{prn_text} PRC:{prc_text} PRX:{prx_text} "
+                        f"IDL:{idl_text} HIBR:{hbr_text} HIBF:{hbf_text} HIBC:{hibc_text} HIBD:{hibd_text}]"
+                    )
                 raw_compact = (
                     f"RAW[SCA:{float(scale_log):.3f} INR:{inr_pre:.2f}->{inr_post:.2f}/F:{inr_floor:.2f} "
                     f"DZN:{model.ptr_deadzone:.2f} WLK:{model.ptr_walk_prob:.2f} "
@@ -2300,7 +2584,7 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                 )
                 log(
                     f"{dataset_name} | {model_name} | step {step:04d} | loss {loss.item():.4f} | "
-                    f"t={elapsed:.1f}s | {vcog_header} {raw_compact}{shard_text}"
+                    f"t={elapsed:.1f}s | {vcog_header}{meta_text} {raw_compact}{shard_text}"
                     + xray_text
                     + (f" | panic={panic_status}" if panic_reflex is not None else "")
                 )
@@ -2324,6 +2608,15 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                         trace["ptr_delta_abs_mean"] = getattr(model, "ptr_delta_abs_mean", None)
                         trace["ptr_delta_raw_mean"] = getattr(model, "ptr_delta_raw_mean", None)
                         trace["ptr_inertia"] = model.ptr_inertia
+                        trace["ptr_orbit"] = getattr(model, "ptr_orbit", None)
+                        trace["ptr_residual_mean"] = getattr(model, "ptr_residual_mean", None)
+                        trace["ptr_anchor_clicks"] = getattr(model, "ptr_anchor_clicks", None)
+                        trace["ptr_update_allowed"] = getattr(model, "ptr_update_allowed", None)
+                        trace["ptr_update_blocked"] = getattr(model, "ptr_update_blocked", None)
+                        trace["ptr_lock"] = getattr(model, "ptr_lock", None)
+                        trace["ptr_time_pointer"] = getattr(model, "time_pointer", None)
+                        trace["ptr_warmup_steps"] = getattr(model, "ptr_warmup_steps", None)
+                        trace["ptr_update_every"] = getattr(model, "ptr_update_every", None)
                         trace["ptr_expert_active"] = getattr(model, "ptr_expert_active", None)
                         trace["ptr_expert_max_share"] = getattr(model, "ptr_expert_max_share", None)
                         trace["ptr_expert_entropy"] = getattr(model, "ptr_expert_entropy", None)
@@ -2343,6 +2636,20 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                         trace["state_loop_abab_rate"] = getattr(model, "state_loop_abab_rate", None)
                         trace["state_loop_mean_dwell"] = getattr(model, "state_loop_mean_dwell", None)
                         trace["state_loop_max_dwell"] = getattr(model, "state_loop_max_dwell", None)
+                    if METABOLIC_TELEMETRY:
+                        trace["metabolic_hunger"] = metabolic_stats.get("hgr")
+                        trace["metabolic_prune_max_sim"] = metabolic_stats.get("prn")
+                        trace["metabolic_prune_pairs"] = metabolic_stats.get("prc")
+                        trace["metabolic_prune_pair"] = metabolic_stats.get("prx")
+                        trace["metabolic_idle_experts"] = metabolic_stats.get("idl")
+                        trace["metabolic_idle_steps"] = METABOLIC_IDLE_STEPS
+                    if HIBERNATE_ENABLED:
+                        trace["hibernation_saved"] = getattr(head, "hibernation_saved", 0) if head is not None else 0
+                        trace["hibernation_fetched"] = getattr(head, "hibernation_fetched", 0) if head is not None else 0
+                        trace["hibernation_corrupt"] = getattr(head, "hibernation_corrupt", 0) if head is not None else 0
+                        trace["hibernation_drift"] = getattr(head, "hibernation_drift", 0) if head is not None else 0
+                        trace["hibernation_idle_steps"] = HIBERNATE_IDLE_STEPS
+                        trace["hibernation_dir"] = HIBERNATE_DIR
                     if DEVICE == "cuda":
                         trace["cuda_mem_alloc_mb"] = round(torch.cuda.memory_allocated() / (1024**2), 2)
                         trace["cuda_mem_reserved_mb"] = round(torch.cuda.memory_reserved() / (1024**2), 2)
@@ -2723,6 +3030,26 @@ def train_steps(model, loader, steps, dataset_name, model_name):
     panic_reflex = None
     panic_status = ""
     vcog = VCogGovernor(id_target=VCOG_ID_TARGET, sigma_floor=VCOG_SIGMA_FLOOR)
+    expert_last_used = []
+    last_hibernate_step = -1
+    hibernate_dir = None
+    head = getattr(model, "head", None)
+    if head is not None and HIBERNATE_ENABLED:
+        if not hasattr(head, "hibernation_state"):
+            head.hibernation_state = {}
+        if not hasattr(head, "hibernation_saved"):
+            head.hibernation_saved = 0
+        if not hasattr(head, "hibernation_fetched"):
+            head.hibernation_fetched = 0
+        if not hasattr(head, "hibernation_corrupt"):
+            head.hibernation_corrupt = 0
+        if not hasattr(head, "hibernation_drift"):
+            head.hibernation_drift = 0
+        head.hibernate_mode = HIBERNATE_MODE
+        head.hibernation_enabled = True
+    hibernation_state = head.hibernation_state if head is not None and HIBERNATE_ENABLED else {}
+    metabolic_stats = {"hgr": None, "prn": None, "prc": None, "prx": None, "idl": None}
+    last_metabolic_step = -1
     if PANIC_ENABLED:
         panic_reflex = PanicReflex(
             ema_beta=PANIC_BETA,
@@ -2769,14 +3096,18 @@ def train_steps(model, loader, steps, dataset_name, model_name):
         with amp_autocast():
             outputs, move_pen = model(inputs)
             loss = criterion(outputs, targets) + LAMBDA_MOVE * move_pen
+            if METABOLIC_HUNGER:
+                head = getattr(model, "head", None)
+                num_experts = getattr(head, "num_experts", EXPERT_HEADS) if head is not None else EXPERT_HEADS
+                loss = loss + (METABOLIC_COST_COEFF * float(num_experts))
+            loss_val = float(loss.item())
+            loss_ema = getattr(model, "loss_ema", None)
+            if loss_ema is None:
+                loss_ema = loss_val
+            else:
+                loss_ema = LOSS_EMA_BETA * loss_ema + (1.0 - LOSS_EMA_BETA) * loss_val
+            model.loss_ema = loss_ema
             if INERTIA_SIGNAL_ENABLED:
-                loss_val = float(loss.item())
-                loss_ema = getattr(model, "loss_ema", None)
-                if loss_ema is None:
-                    loss_ema = loss_val
-                else:
-                    loss_ema = LOSS_EMA_BETA * loss_ema + (1.0 - LOSS_EMA_BETA) * loss_val
-                model.loss_ema = loss_ema
                 confidence = 1.0 / (1.0 + loss_ema)
                 epi = confidence * confidence
                 model.ptr_inertia_epi = epi
@@ -2875,6 +3206,9 @@ def train_steps(model, loader, steps, dataset_name, model_name):
                     "eval_acc": eval_acc_val,
                     "search": search_val,
                     "focus": float(focus_val) if focus_val is not None else 0.0,
+                    "orb": float(getattr(model, "ptr_orbit", 0) or 0),
+                    "rd": float(getattr(model, "ptr_residual_mean", 0.0) or 0.0),
+                    "ac": int(getattr(model, "ptr_anchor_clicks", 0) or 0),
                     "inertia": float(model.ptr_inertia),
                     "epi": float(getattr(model, "ptr_inertia_epi", 0.0) or 0.0),
                     "walk": float(model.ptr_walk_prob),
@@ -2888,6 +3222,90 @@ def train_steps(model, loader, steps, dataset_name, model_name):
                 if inr_pre is None or inr_post is None:
                     inr_pre = float(model.ptr_inertia)
                     inr_post = float(model.ptr_inertia)
+                meta_text = ""
+                if METABOLIC_TELEMETRY or HIBERNATE_ENABLED:
+                    head = getattr(model, "head", None)
+                    num_experts = getattr(head, "num_experts", EXPERT_HEADS) if head is not None else EXPERT_HEADS
+                    if len(expert_last_used) < num_experts:
+                        expert_last_used.extend([None] * (num_experts - len(expert_last_used)))
+                    counts = getattr(model, "ptr_expert_counts", None)
+                    if counts is not None:
+                        for idx, count in enumerate(counts):
+                            if count > 0 and idx < len(expert_last_used):
+                                expert_last_used[idx] = step
+                    if METABOLIC_TELEMETRY and METABOLIC_EVERY > 0 and (step % METABOLIC_EVERY == 0 or last_metabolic_step < 0):
+                        sim_stats = _compute_expert_similarity_stats(model, METABOLIC_SIM_THRESH)
+                        if sim_stats is None:
+                            metabolic_stats["prn"] = None
+                            metabolic_stats["prc"] = None
+                            metabolic_stats["prx"] = None
+                        else:
+                            metabolic_stats["prn"], metabolic_stats["prc"], metabolic_stats["prx"] = sim_stats
+                        last_metabolic_step = step
+                    idle_count = 0
+                    if expert_last_used:
+                        for last in expert_last_used:
+                            if last is None or (step - last) >= METABOLIC_IDLE_STEPS:
+                                idle_count += 1
+                    metabolic_stats["idl"] = idle_count
+                    if METABOLIC_TELEMETRY:
+                        metabolic_stats["hgr"] = METABOLIC_COST_COEFF * float(num_experts)
+                    else:
+                        metabolic_stats["hgr"] = None
+                    if HIBERNATE_ENABLED and HIBERNATE_EVERY > 0 and (step % HIBERNATE_EVERY == 0 or last_hibernate_step < 0):
+                        if hibernate_dir is None:
+                            hibernate_dir = _resolve_hibernate_dir(HIBERNATE_DIR, ROOT)
+                        for idx, last in enumerate(expert_last_used):
+                            idle = last is None or (step - last) >= HIBERNATE_IDLE_STEPS
+                            meta = hibernation_state.get(idx)
+                            if idle:
+                                state = _extract_expert_state(head, idx)
+                                if state is None:
+                                    continue
+                                ram_hash = _hash_state_dict(state)
+                                if meta is not None:
+                                    saved_hash = meta.get("hash")
+                                    if saved_hash and ram_hash and saved_hash != ram_hash:
+                                        if head is not None:
+                                            head.hibernation_drift += 1
+                                path = meta.get("path") if meta is not None else None
+                                if not path:
+                                    path = os.path.join(hibernate_dir, f"expert_{idx}.pt")
+                                digest = _save_expert_snapshot(state, path)
+                                hibernation_state[idx] = {
+                                    "path": path,
+                                    "hash": digest,
+                                    "step": step,
+                                    "offloaded": False,
+                                }
+                                if head is not None:
+                                    head.hibernation_saved += 1
+                                if HIBERNATE_MODE == "offload":
+                                    if _zero_expert_weights(head, idx):
+                                        hibernation_state[idx]["offloaded"] = True
+                        last_hibernate_step = step
+                    hgr = metabolic_stats.get("hgr")
+                    prn = metabolic_stats.get("prn")
+                    prc = metabolic_stats.get("prc")
+                    prx = metabolic_stats.get("prx")
+                    idl = metabolic_stats.get("idl")
+                    prn_text = "-" if prn is None else f"{prn:.2f}"
+                    prc_text = "-" if prc is None else f"{prc:d}"
+                    prx_text = "-" if prx is None else f"{prx[0]}-{prx[1]}"
+                    idl_text = "-" if idl is None else f"{idl:d}"
+                    hgr_text = "-" if hgr is None else f"{hgr:.4f}"
+                    hibernation_saved = getattr(head, "hibernation_saved", 0) if head is not None else 0
+                    hibernation_fetched = getattr(head, "hibernation_fetched", 0) if head is not None else 0
+                    hibernation_corrupt = getattr(head, "hibernation_corrupt", 0) if head is not None else 0
+                    hibernation_drift = getattr(head, "hibernation_drift", 0) if head is not None else 0
+                    hbr_text = "-" if not HIBERNATE_ENABLED else f"{hibernation_saved:d}"
+                    hbf_text = "-" if not HIBERNATE_ENABLED else f"{hibernation_fetched:d}"
+                    hibc_text = "-" if not HIBERNATE_ENABLED else f"{hibernation_corrupt:d}"
+                    hibd_text = "-" if not HIBERNATE_ENABLED else f"{hibernation_drift:d}"
+                    meta_text = (
+                        f" META[HGR:{hgr_text} PRN:{prn_text} PRC:{prc_text} PRX:{prx_text} "
+                        f"IDL:{idl_text} HIBR:{hbr_text} HIBF:{hbf_text} HIBC:{hibc_text} HIBD:{hibd_text}]"
+                    )
                 raw_compact = (
                     f"RAW[SCA:{float(scale_log):.3f} INR:{inr_pre:.2f}->{inr_post:.2f}/F:{inr_floor:.2f} "
                     f"DZN:{model.ptr_deadzone:.2f} WLK:{model.ptr_walk_prob:.2f} "
@@ -2901,7 +3319,7 @@ def train_steps(model, loader, steps, dataset_name, model_name):
                 debug_payload = f" | debug {stats_payload}"
                 log(
                     f"{dataset_name} | {model_name} | step {step:04d}/{steps:04d} | loss {loss.item():.4f} | "
-                    f"t={elapsed:.1f}s | {vcog_header} {raw_compact}"
+                    f"t={elapsed:.1f}s | {vcog_header}{meta_text} {raw_compact}"
                     + (f" | panic={panic_status}" if panic_reflex is not None else "")
                     + debug_payload
                 )
@@ -2934,6 +3352,15 @@ def train_steps(model, loader, steps, dataset_name, model_name):
                     "ptr_max_dwell": getattr(model, "ptr_max_dwell", None),
                     "ptr_delta_abs_mean": getattr(model, "ptr_delta_abs_mean", None),
                     "ptr_delta_raw_mean": getattr(model, "ptr_delta_raw_mean", None),
+                    "ptr_orbit": getattr(model, "ptr_orbit", None),
+                    "ptr_residual_mean": getattr(model, "ptr_residual_mean", None),
+                    "ptr_anchor_clicks": getattr(model, "ptr_anchor_clicks", None),
+                    "ptr_update_allowed": getattr(model, "ptr_update_allowed", None),
+                    "ptr_update_blocked": getattr(model, "ptr_update_blocked", None),
+                    "ptr_lock": getattr(model, "ptr_lock", None),
+                    "ptr_time_pointer": getattr(model, "time_pointer", None),
+                    "ptr_warmup_steps": getattr(model, "ptr_warmup_steps", None),
+                    "ptr_update_every": getattr(model, "ptr_update_every", None),
                     "update_scale": getattr(model, "debug_scale_out", getattr(model, "update_scale", UPDATE_SCALE)),
                     "ground_speed": getattr(model, "ground_speed", None),
                     "ground_speed_ema": getattr(model, "ground_speed_ema", None),
@@ -2949,6 +3376,20 @@ def train_steps(model, loader, steps, dataset_name, model_name):
                 }
                 if DEBUG_STATS and getattr(model, "debug_stats", None):
                     trace["debug"] = model.debug_stats
+                if METABOLIC_TELEMETRY:
+                    trace["metabolic_hunger"] = metabolic_stats.get("hgr")
+                    trace["metabolic_prune_max_sim"] = metabolic_stats.get("prn")
+                    trace["metabolic_prune_pairs"] = metabolic_stats.get("prc")
+                    trace["metabolic_prune_pair"] = metabolic_stats.get("prx")
+                    trace["metabolic_idle_experts"] = metabolic_stats.get("idl")
+                    trace["metabolic_idle_steps"] = METABOLIC_IDLE_STEPS
+                    if HIBERNATE_ENABLED:
+                        trace["hibernation_saved"] = getattr(head, "hibernation_saved", 0) if head is not None else 0
+                        trace["hibernation_fetched"] = getattr(head, "hibernation_fetched", 0) if head is not None else 0
+                        trace["hibernation_corrupt"] = getattr(head, "hibernation_corrupt", 0) if head is not None else 0
+                        trace["hibernation_drift"] = getattr(head, "hibernation_drift", 0) if head is not None else 0
+                        trace["hibernation_idle_steps"] = HIBERNATE_IDLE_STEPS
+                        trace["hibernation_dir"] = HIBERNATE_DIR
                 try:
                     with open(train_trace_path, "a", encoding="utf-8") as f:
                         f.write(json.dumps(trace) + "\n")

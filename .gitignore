@@ -18,6 +18,7 @@ review_pack/
 review_pack.zip
 
 # Checkpoints / binaries
+checkpoints/
 checkpoint.pt
 *.pt
 *.pth
@@ -37,3 +38,5 @@ logs/
 *.log
 live_trace_*.json
 summary_*.json
+hibernation/
+hibernation_shadow/
