@@ -176,6 +176,7 @@ MITOSIS_CKPT_PATH = os.environ.get("TP6_MITOSIS_CKPT", "")
 METABOLIC_TELEMETRY = os.environ.get("TP6_METABOLIC_TELEMETRY", "0") == "1"
 METABOLIC_HUNGER = os.environ.get("TP6_METABOLIC_HUNGER", "0") == "1"
 METABOLIC_COST_COEFF = float(os.environ.get("TP6_METABOLIC_COST_COEFF", "0.0001"))
+DOMAIN_SEP_COEFF = float(os.environ.get("TP6_DOMAIN_SEP_COEFF", "0.0"))
 METABOLIC_SIM_THRESH = float(os.environ.get("TP6_METABOLIC_SIM_THRESH", "0.98"))
 METABOLIC_EVERY = int(os.environ.get("TP6_METABOLIC_EVERY", "500"))
 METABOLIC_IDLE_STEPS = int(os.environ.get("TP6_METABOLIC_IDLE_STEPS", "2000"))
@@ -1788,6 +1789,179 @@ def get_seq_mnist_loader():
                 collate_fn=collate,
             )
             return loader, num_classes, collate
+        elif synth_mode == "assoc_mix":
+            seq_len = base_seq_len
+            pairs = max(1, int(ASSOC_PAIRS))
+            keys = max(2, int(ASSOC_KEYS))
+            val_range = max(2, int(ASSOC_VAL_RANGE))
+            min_len = pairs * 2 + 1
+            bump_attempts = 0
+            max_bumps = 5
+            n_samples_int = int(n_samples)
+            n_clean = n_samples_int // 2
+            n_byte = n_samples_int - n_clean
+
+            def _build_assoc_clean(seq_len_local: int, n_samples_local: int):
+                x_local = torch.zeros((n_samples_local, seq_len_local, 1), dtype=torch.float32)
+                y_local = torch.zeros((n_samples_local,), dtype=torch.long)
+                max_start_local = seq_len_local - 3  # reserve last token for query
+                for idx in range(n_samples_local):
+                    used = set()
+                    pair_specs = []
+                    starts = list(range(0, max_start_local + 1))
+                    random.shuffle(starts)
+                    for cand in starts:
+                        if cand in used or (cand + 1) in used:
+                            continue
+                        used.add(cand)
+                        used.add(cand + 1)
+                        key_id = random.randint(0, keys - 1)
+                        val = random.randint(0, 1)
+                        key_token = float(2 + key_id)
+                        val_token = -1.0 if val == 0 else -2.0
+                        x_local[idx, cand, 0] = key_token
+                        x_local[idx, cand + 1, 0] = val_token
+                        pair_specs.append((key_id, val, key_token))
+                        if len(pair_specs) >= pairs:
+                            break
+                    if len(pair_specs) < pairs:
+                        return None, None
+                    _, q_val, q_token = random.choice(pair_specs)
+                    x_local[idx, -1, 0] = q_token
+                    y_local[idx] = q_val
+                return x_local, y_local
+
+            def _build_assoc_byte(seq_len_local: int, n_samples_local: int):
+                x_local = torch.zeros((n_samples_local, seq_len_local, 1), dtype=torch.float32)
+                y_local = torch.zeros((n_samples_local,), dtype=torch.long)
+                max_start_local = seq_len_local - 3  # reserve last token for query
+                for idx in range(n_samples_local):
+                    used = set()
+                    pair_specs = []
+                    starts = list(range(0, max_start_local + 1))
+                    random.shuffle(starts)
+                    for cand in starts:
+                        if cand in used or (cand + 1) in used:
+                            continue
+                        used.add(cand)
+                        used.add(cand + 1)
+                        key_id = random.randint(0, keys - 1)
+                        val = random.randint(0, val_range - 1)
+                        key_token = float(2 + key_id)
+                        val_token = -float(val + 1)  # keep value tokens distinct from keys/distractors
+                        x_local[idx, cand, 0] = key_token
+                        x_local[idx, cand + 1, 0] = val_token
+                        pair_specs.append((key_id, val, key_token))
+                        if len(pair_specs) >= pairs:
+                            break
+                    if len(pair_specs) < pairs:
+                        return None, None
+                    _, q_val, q_token = random.choice(pair_specs)
+                    x_local[idx, -1, 0] = q_token
+                    y_local[idx] = q_val
+                return x_local, y_local
+
+            if seq_len < min_len:
+                log(f"[synth] assoc_mix bump len from {seq_len} to {min_len} (min_len)")
+                seq_len = min_len
+
+            x_clean = None
+            y_clean = None
+            x_byte = None
+            y_byte = None
+            while bump_attempts <= max_bumps:
+                x_clean, y_clean = _build_assoc_clean(seq_len, n_clean)
+                x_byte, y_byte = _build_assoc_byte(seq_len, n_byte)
+                if x_clean is not None and x_byte is not None:
+                    break
+                bump_attempts += 1
+                new_len = seq_len + max(2, pairs) * 2
+                log(f"[synth] assoc_mix bump len from {seq_len} to {new_len} (placement failed)")
+                seq_len = new_len
+
+            if x_clean is None or x_byte is None:
+                raise RuntimeError("assoc_mix: failed to place non-overlapping pairs after bumps")
+
+            mix_offset = float(os.environ.get("TP6_ASSOC_MIX_OFFSET", "100.0"))
+            mix_clean_offset = float(os.environ.get("TP6_ASSOC_MIX_CLEAN_OFFSET", "0.0"))
+            mix_domain_token = os.environ.get("TP6_ASSOC_MIX_DOMAIN_TOKEN") == "1"
+            mix_clean_sentinel = float(os.environ.get("TP6_ASSOC_MIX_CLEAN_SENTINEL", "50.0"))
+            mix_byte_sentinel = float(os.environ.get("TP6_ASSOC_MIX_BYTE_SENTINEL", "150.0"))
+            if mix_clean_offset:
+                # Shift only key/query tokens (positive) to preserve value token sign.
+                mask = x_clean > 0
+                x_clean[mask] = x_clean[mask] + mix_clean_offset
+            if mix_offset:
+                # Shift only key/query tokens (positive) to preserve value token sign.
+                mask = x_byte > 0
+                x_byte[mask] = x_byte[mask] + mix_offset
+            if mix_domain_token:
+                # Safe sentinel: prepend a domain token without overwriting data.
+                def _prepend_domain_token(x_src, token):
+                    x_pad = torch.zeros(
+                        (x_src.size(0), x_src.size(1) + 1, x_src.size(2)),
+                        dtype=x_src.dtype,
+                    )
+                    x_pad[:, 1:, :] = x_src
+                    x_pad[:, 0, 0] = token
+                    return x_pad
+
+                x_clean = _prepend_domain_token(x_clean, mix_clean_sentinel)
+                x_byte = _prepend_domain_token(x_byte, mix_byte_sentinel)
+                seq_len = seq_len + 1
+
+            y_byte = y_byte + 2
+            x = torch.cat([x_clean, x_byte], dim=0)
+            y = torch.cat([y_clean, y_byte], dim=0)
+            perm = torch.randperm(x.size(0))
+            x = x[perm]
+            y = y[perm]
+
+            SYNTH_META.update(
+                {
+                    "assoc_keys": keys,
+                    "assoc_pairs": pairs,
+                    "assoc_val_range": val_range,
+                    "synth_len": seq_len,
+                    "assoc_mix_clean": int(n_clean),
+                    "assoc_mix_byte": int(n_byte),
+                    "assoc_mix_offset": mix_offset,
+                    "assoc_mix_clean_offset": mix_clean_offset,
+                    "assoc_mix_domain_token": int(mix_domain_token),
+                    "assoc_mix_clean_sentinel": mix_clean_sentinel,
+                    "assoc_mix_byte_sentinel": mix_byte_sentinel,
+                }
+            )
+            num_classes = val_range + 2
+            log(
+                f"[synth] mode=assoc_mix rows={int(n_samples_int)} clean={n_clean} byte={n_byte} "
+                f"keys={keys} vals={val_range} pairs={pairs} len={seq_len} "
+                f"offsets=clean:{mix_clean_offset:g} byte:{mix_offset:g} "
+                f"sentinel={int(mix_domain_token)}"
+            )
+
+            class _SynthMix(torch.utils.data.Dataset):
+                def __len__(self):
+                    return x.size(0)
+
+                def __getitem__(self, item):
+                    return x[item], y[item]
+
+            ds = _SynthMix()
+
+            def collate(batch):
+                xs, ys = zip(*batch)
+                return torch.stack(xs, dim=0), torch.tensor(ys, dtype=torch.long)
+
+            loader = DataLoader(
+                ds,
+                batch_size=BATCH_SIZE,
+                shuffle=True,
+                num_workers=0,
+                pin_memory=False,
+                collate_fn=collate,
+            )
+            return loader, num_classes, collate
         elif synth_mode == "hand_kv":
             hand_path = os.environ.get("TP6_HAND_PATH", os.path.join(DATA_DIR, "hand_kv.jsonl"))
             pad_len = int(os.environ.get("TP6_HAND_PAD_LEN", "0"))
@@ -2234,6 +2408,48 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                     vasc_grad_ema = PTR_UPDATE_EMA * float(vasc_grad_ema) + (1.0 - PTR_UPDATE_EMA) * float(tension_val)
                 model.vasc_grad_ema = vasc_grad_ema
 
+                dom0_top = None
+                dom0_share = None
+                dom1_top = None
+                dom1_share = None
+                dom_overlap = None
+                dom_sep = None
+                if EXPERT_HEADS > 1 and SYNTH_MODE == "assoc_mix":
+                    last_ptr = getattr(model, "last_ptr_int", None)
+                    router_map = getattr(model, "router_map", None)
+                    if last_ptr is not None:
+                        try:
+                            last_ptr_cpu = last_ptr.to(torch.long).cpu()
+                            targets_cpu = targets.detach().cpu()
+                            dom_mask = targets_cpu >= 2
+                            if router_map is not None and router_map.numel() > 0:
+                                mapped = router_map.detach().cpu()
+                                mapped_ids = mapped[last_ptr_cpu.clamp(0, mapped.numel() - 1)]
+                                num_experts = int(getattr(model.head, "num_experts", EXPERT_HEADS))
+                            else:
+                                mapped_ids = last_ptr_cpu % EXPERT_HEADS
+                                num_experts = EXPERT_HEADS
+                            if mapped_ids.numel() == dom_mask.numel():
+                                p0 = None
+                                p1 = None
+                                if (~dom_mask).any():
+                                    counts0 = torch.bincount(mapped_ids[~dom_mask], minlength=num_experts).float()
+                                    total0 = counts0.sum().clamp(min=1.0)
+                                    dom0_top = int(torch.argmax(counts0).item())
+                                    dom0_share = float((counts0[dom0_top] / total0).item())
+                                    p0 = counts0 / total0
+                                if dom_mask.any():
+                                    counts1 = torch.bincount(mapped_ids[dom_mask], minlength=num_experts).float()
+                                    total1 = counts1.sum().clamp(min=1.0)
+                                    dom1_top = int(torch.argmax(counts1).item())
+                                    dom1_share = float((counts1[dom1_top] / total1).item())
+                                    p1 = counts1 / total1
+                                if p0 is not None and p1 is not None:
+                                    overlap = torch.minimum(p0, p1).sum()
+                                    dom_overlap = float(overlap.item())
+                                    dom_sep = 1.0 - dom_overlap
+                        except Exception:
+                            dom0_top = None
                 if SHARD_ENABLED and SHARD_ADAPT and SHARD_ADAPT_EVERY > 0 and (step % SHARD_ADAPT_EVERY == 0):
                     shard_count, local_shard_size, focus, tension, cohesion = calculate_adaptive_vasc(
                         batch_sz, dwell_val, tension_val, vasc_max_dwell, vasc_grad_ema
@@ -2290,6 +2506,16 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                         model.debug_shard_info["expert_imbalance"] = expert_imbalance
                     if expert_entropy is not None:
                         model.debug_shard_info["expert_entropy"] = expert_entropy
+                    if dom0_top is not None:
+                        model.debug_shard_info["dom0_top"] = dom0_top
+                        model.debug_shard_info["dom0_share"] = dom0_share
+                    if dom1_top is not None:
+                        model.debug_shard_info["dom1_top"] = dom1_top
+                        model.debug_shard_info["dom1_share"] = dom1_share
+                    if dom_overlap is not None:
+                        model.debug_shard_info["dom_overlap"] = dom_overlap
+                    if dom_sep is not None:
+                        model.debug_shard_info["dom_sep"] = dom_sep
                 if SHARD_ENABLED and local_shard_size > 0 and outputs.shape[0] > local_shard_size:
                     # Sub-culture partitioning: split batch into shards, mean losses.
                     loss_parts = []
@@ -2304,6 +2530,8 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                     head = getattr(model, "head", None)
                     num_experts = getattr(head, "num_experts", EXPERT_HEADS) if head is not None else EXPERT_HEADS
                     loss = loss + (METABOLIC_COST_COEFF * float(num_experts))
+                if DOMAIN_SEP_COEFF > 0.0 and dom_overlap is not None:
+                    loss = loss + (loss.new_tensor(dom_overlap) * DOMAIN_SEP_COEFF)
                 loss_val = float(loss.item())
                 loss_ema = getattr(model, "loss_ema", None)
                 if loss_ema is None:
@@ -2577,6 +2805,19 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                         f" META[HGR:{hgr_text} PRN:{prn_text} PRC:{prc_text} PRX:{prx_text} "
                         f"IDL:{idl_text} HIBR:{hbr_text} HIBF:{hbf_text} HIBC:{hibc_text} HIBD:{hibd_text}]"
                     )
+                domain_text = ""
+                shard_info = getattr(model, "debug_shard_info", None)
+                if SYNTH_MODE == "assoc_mix" and shard_info:
+                    dom0_top = shard_info.get("dom0_top")
+                    dom0_share = shard_info.get("dom0_share")
+                    dom1_top = shard_info.get("dom1_top")
+                    dom1_share = shard_info.get("dom1_share")
+                    if dom0_top is not None or dom1_top is not None:
+                        dom0_text = "-" if dom0_top is None else f"{dom0_top}:{dom0_share:.2f}"
+                        dom1_text = "-" if dom1_top is None else f"{dom1_top}:{dom1_share:.2f}"
+                        dom_sep = shard_info.get("dom_sep")
+                        sep_text = "" if dom_sep is None else f" SEP:{dom_sep:.2f}"
+                        domain_text = f" DOM[{dom0_text} {dom1_text}{sep_text}]"
                 raw_compact = (
                     f"RAW[SCA:{float(scale_log):.3f} INR:{inr_pre:.2f}->{inr_post:.2f}/F:{inr_floor:.2f} "
                     f"DZN:{model.ptr_deadzone:.2f} WLK:{model.ptr_walk_prob:.2f} "
@@ -2584,7 +2825,7 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                 )
                 log(
                     f"{dataset_name} | {model_name} | step {step:04d} | loss {loss.item():.4f} | "
-                    f"t={elapsed:.1f}s | {vcog_header}{meta_text} {raw_compact}{shard_text}"
+                    f"t={elapsed:.1f}s | {vcog_header}{meta_text}{domain_text} {raw_compact}{shard_text}"
                     + xray_text
                     + (f" | panic={panic_status}" if panic_reflex is not None else "")
                 )
@@ -2628,6 +2869,11 @@ def train_wallclock(model, loader, dataset_name, model_name, num_classes, wall_c
                         trace["ground_speed_limit"] = getattr(model, "ground_speed_limit", None)
                         if panic_reflex is not None:
                             trace["panic_status"] = panic_status
+                    if SYNTH_MODE == "assoc_mix" and shard_info:
+                        trace["dom0_top"] = shard_info.get("dom0_top")
+                        trace["dom0_share"] = shard_info.get("dom0_share")
+                        trace["dom1_top"] = shard_info.get("dom1_top")
+                        trace["dom1_share"] = shard_info.get("dom1_share")
                     if getattr(model, "debug_stats", None):
                         trace.update(model.debug_stats)
                     if hasattr(model, "state_loop_entropy"):
@@ -2894,6 +3140,10 @@ def eval_model(model, loader, dataset_name, model_name):
     total_loss = 0.0
     total_correct = 0
     total_seen = 0
+    dom0_correct = 0
+    dom0_seen = 0
+    dom1_correct = 0
+    dom1_seen = 0
     mi_bins = getattr(model, "pointer_hist_bins", 128)
     joint = torch.zeros((model.head.out_features, mi_bins), dtype=torch.long)
     joint_shuffle = torch.zeros_like(joint) if MI_SHUFFLE else None
@@ -2914,6 +3164,13 @@ def eval_model(model, loader, dataset_name, model_name):
             preds = outputs.argmax(dim=1)
             total_correct += (preds == targets).sum().item()
             total_seen += inputs.size(0)
+            if SYNTH_MODE == "assoc_mix":
+                dom0_mask = targets < 2
+                dom1_mask = ~dom0_mask
+                dom0_seen += dom0_mask.sum().item()
+                dom1_seen += dom1_mask.sum().item()
+                dom0_correct += ((preds == targets) & dom0_mask).sum().item()
+                dom1_correct += ((preds == targets) & dom1_mask).sum().item()
             if collect_mitosis and ring_len > 0:
                 addr = getattr(model, "last_ptr_int", None)
                 router_map = getattr(model, "router_map", None)
@@ -2947,6 +3204,8 @@ def eval_model(model, loader, dataset_name, model_name):
                 ptr_steps += 1
     avg_loss = total_loss / max(total_seen, 1)
     acc = total_correct / max(total_seen, 1)
+    dom0_acc = dom0_correct / max(dom0_seen, 1) if SYNTH_MODE == "assoc_mix" else None
+    dom1_acc = dom1_correct / max(dom1_seen, 1) if SYNTH_MODE == "assoc_mix" else None
     mi_bits = None
     mi_bits_shuffle = None
     if joint.sum() > 0:
@@ -2989,10 +3248,18 @@ def eval_model(model, loader, dataset_name, model_name):
                     top_k = min(5, parent_losses.numel())
                     top_vals, top_idx = torch.topk(parent_losses, k=top_k, largest=True)
                     mitosis_hot = [int(addr_idx[i].item()) for i in top_idx]
-    log(f"{dataset_name} | {model_name} | eval_loss {avg_loss:.4f} | eval_acc {acc:.4f} | eval_n {total_seen}")
+    if SYNTH_MODE == "assoc_mix":
+        log(
+            f"{dataset_name} | {model_name} | eval_loss {avg_loss:.4f} | eval_acc {acc:.4f} | "
+            f"eval_acc_d0 {dom0_acc:.4f} | eval_acc_d1 {dom1_acc:.4f} | eval_n {total_seen}"
+        )
+    else:
+        log(f"{dataset_name} | {model_name} | eval_loss {avg_loss:.4f} | eval_acc {acc:.4f} | eval_n {total_seen}")
     return {
         "eval_loss": avg_loss,
         "eval_acc": acc,
+        "eval_acc_d0": dom0_acc,
+        "eval_acc_d1": dom1_acc,
         "eval_n": total_seen,
         "eval_mi_bits": mi_bits,
         "eval_mi_bits_shuffled": mi_bits_shuffle,
