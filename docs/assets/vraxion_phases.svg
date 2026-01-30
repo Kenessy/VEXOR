@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="240" viewBox="0 0 1200 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">VRAXION Phase Columns</title>
+  <desc id="desc">Columnar roadmap with vertical separators. Milestone 03 (Stabilization / Refactor) is highlighted as the active phase.</desc>
+
+  <defs>
+    <!-- Neon glows -->
+    <filter id="neon_cyan" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Subtle circuit grid (matches your other homepage SVGs) -->
+    <pattern id="circuit_grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1A2130" stroke-width="1"/>
+    </pattern>
+
+    <!-- Active column fade -->
+    <linearGradient id="active_fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#00F0FF" stop-opacity="0.00"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="240" rx="8" fill="#0d1117"/>
+  <rect width="1200" height="240" fill="url(#circuit_grid)" opacity="0.16"/>
+  <rect x="0.5" y="0.5" width="1199" height="239" rx="8" stroke="#30363d" stroke-width="1"/>
+
+  <!-- Header -->
+  <text x="30" y="30" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-weight="700" font-size="12" fill="#A0AEC0" letter-spacing="2">
+    PROJECT VRAXION: ENGINEERING MILESTONES
+  </text>
+  <line x1="30" y1="40" x2="1170" y2="40" stroke="#1A2130" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- Vertical dividers -->
+  <g stroke="#30363d" stroke-width="1" stroke-dasharray="2 2" opacity="0.55">
+    <line x1="171" y1="60" x2="171" y2="220"/>
+    <line x1="342" y1="60" x2="342" y2="220"/>
+    <line x1="514" y1="60" x2="514" y2="220"/>
+    <line x1="685" y1="60" x2="685" y2="220"/>
+    <line x1="857" y1="60" x2="857" y2="220"/>
+    <line x1="1028" y1="60" x2="1028" y2="220"/>
+  </g>
+
+  <!-- Shared font stacks -->
+  <!-- (kept inline per-element for maximum renderer compatibility) -->
+
+  <!-- COLUMN 1: GENESIS -->
+  <g transform="translate(0, 60)">
+    <line x1="20" y1="0" x2="60" y2="0" stroke="#FF00FF" stroke-width="2" opacity="0.50"/>
+    <text x="20" y="25" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#FF00FF" opacity="0.82">01 / CONCEPT</text>
+    <text x="20" y="45" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-weight="750" font-size="14" fill="#E2E8F0">GENESIS</text>
+
+    <g transform="translate(20, 75)">
+      <text y="0" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#A0AEC0">
+        <tspan x="0" dy="0">• Theoretical architecture</tspan>
+        <tspan x="0" dy="16">• Constraint definition</tspan>
+        <tspan x="0" dy="16">• Core logic design</tspan>
+      </text>
+    </g>
+
+    <text x="20" y="145" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="9" font-weight="700" fill="#A0AEC0" opacity="0.40" letter-spacing="1">COMPLETE</text>
+  </g>
+
+  <!-- COLUMN 2: PROTOTYPE -->
+  <g transform="translate(171, 60)">
+    <line x1="20" y1="0" x2="60" y2="0" stroke="#FF00FF" stroke-width="2" opacity="0.80"/>
+    <text x="20" y="25" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#FF00FF" opacity="0.82">02 / EXPERIMENTAL</text>
+    <text x="20" y="45" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-weight="750" font-size="14" fill="#E2E8F0">PROTOTYPE</text>
+
+    <g transform="translate(20, 75)">
+      <text y="0" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#A0AEC0">
+        <tspan x="0" dy="0">• PoC validated</tspan>
+        <tspan x="0" dy="16">• Rapid iteration cycles</tspan>
+        <tspan x="0" dy="16">• Experimental codebase</tspan>
+      </text>
+    </g>
+
+    <text x="20" y="145" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="9" font-weight="700" fill="#A0AEC0" opacity="0.40" letter-spacing="1">COMPLETE</text>
+  </g>
+
+  <!-- COLUMN 3: REFACTOR (ACTIVE) -->
+  <g transform="translate(342, 60)">
+    <!-- Active background -->
+    <rect width="172" height="160" fill="url(#active_fade)"/>
+
+    <!-- Active top highlight -->
+    <line x1="0" y1="0" x2="172" y2="0" stroke="#00F0FF" stroke-width="2" filter="url(#neon_cyan)"/>
+
+    <text x="20" y="25" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#00F0FF" font-weight="800" filter="url(#neon_cyan)">03 / STABILIZATION</text>
+    <text x="20" y="45" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-weight="800" font-size="14" fill="#FFFFFF">REFACTOR</text>
+
+    <g transform="translate(20, 75)">
+      <text y="0" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#E2E8F0">
+        <tspan x="0" dy="0">• Architecture consolidation</tspan>
+        <tspan x="0" dy="16">• Resilience engineering</tspan>
+        <tspan x="0" dy="16">• Stress &amp; load testing</tspan>
+      </text>
+    </g>
+
+    <!-- Pulse indicator -->
+    <circle cx="150" cy="140" r="4" fill="#00F0FF">
+      <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
+    </circle>
+
+    <text x="20" y="145" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="9" font-weight="800" fill="#00F0FF" letter-spacing="1">IN PROGRESS</text>
+  </g>
+
+  <!-- COLUMN 4: INSTINCT -->
+  <g transform="translate(514, 60)">
+    <line x1="20" y1="0" x2="60" y2="0" stroke="#30363d" stroke-width="1"/>
+    <text x="20" y="25" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#A0AEC0" opacity="0.55">04 / BETA</text>
+    <text x="20" y="45" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-weight="750" font-size="14" fill="#A0AEC0" opacity="0.78">INSTINCT</text>
+
+    <g transform="translate(20, 75)">
+      <text y="0" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#A0AEC0" opacity="0.62">
+        <tspan x="0" dy="0">• Beta product release</tspan>
+        <tspan x="0" dy="16">• Stable inference engine</tspan>
+        <tspan x="0" dy="16">• Production API layers</tspan>
+      </text>
+    </g>
+
+    <text x="20" y="145" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="9" font-weight="700" fill="#A0AEC0" opacity="0.28" letter-spacing="1">PLANNED</text>
+  </g>
+
+  <!-- COLUMN 5: SCALE -->
+  <g transform="translate(685, 60)">
+    <line x1="20" y1="0" x2="60" y2="0" stroke="#30363d" stroke-width="1"/>
+    <text x="20" y="25" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#A0AEC0" opacity="0.45">05 / OPTIMIZATION</text>
+    <text x="20" y="45" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-weight="750" font-size="14" fill="#A0AEC0" opacity="0.68">SCALE</text>
+
+    <g transform="translate(20, 75)">
+      <text y="0" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#A0AEC0" opacity="0.54">
+        <tspan x="0" dy="0">• Hardware optimization</tspan>
+        <tspan x="0" dy="16">• Latency reduction</tspan>
+        <tspan x="0" dy="16">• Compute density scaling</tspan>
+      </text>
+    </g>
+
+    <text x="20" y="145" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="9" font-weight="700" fill="#A0AEC0" opacity="0.22" letter-spacing="1">PLANNED</text>
+  </g>
+
+  <!-- COLUMN 6: SWARM -->
+  <g transform="translate(857, 60)">
+    <line x1="20" y1="0" x2="60" y2="0" stroke="#30363d" stroke-width="1"/>
+    <text x="20" y="25" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#A0AEC0" opacity="0.35">06 / DIVERGENCE</text>
+    <text x="20" y="45" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-weight="750" font-size="14" fill="#A0AEC0" opacity="0.56">SWARM</text>
+
+    <g transform="translate(20, 75)">
+      <text y="0" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#A0AEC0" opacity="0.44">
+        <tspan x="0" dy="0">• Multi-agent protocol</tspan>
+        <tspan x="0" dy="16">• Distributed reasoning</tspan>
+        <tspan x="0" dy="16">• Divergent logic forks</tspan>
+      </text>
+    </g>
+
+    <text x="20" y="145" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="9" font-weight="700" fill="#A0AEC0" opacity="0.18" letter-spacing="1">PLANNED</text>
+  </g>
+
+  <!-- COLUMN 7: ASI -->
+  <g transform="translate(1028, 60)">
+    <line x1="20" y1="0" x2="60" y2="0" stroke="#30363d" stroke-width="1"/>
+    <text x="20" y="25" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#A0AEC0" opacity="0.25">07 / HIVE MIND</text>
+    <text x="20" y="45" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-weight="750" font-size="14" fill="#A0AEC0" opacity="0.46">ASI</text>
+
+    <g transform="translate(20, 75)">
+      <text y="0" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#A0AEC0" opacity="0.34">
+        <tspan x="0" dy="0">• Edge hive sync</tspan>
+        <tspan x="0" dy="16">• Global synchronization</tspan>
+        <tspan x="0" dy="16">• Cognitive convergence</tspan>
+      </text>
+    </g>
+
+    <text x="20" y="145" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="9" font-weight="700" fill="#A0AEC0" opacity="0.14" letter-spacing="1">PLANNED</text>
+  </g>
+</svg>
