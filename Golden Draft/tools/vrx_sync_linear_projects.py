@@ -618,6 +618,7 @@ def _smoke_draft_edit(priv_num: int, owner: str, *, apply: bool) -> None:
     if not item_id:
         raise SyncError("Smoke test failed: gh project item-create returned no id")
 
+    archive_cmd = ["gh", "project", "item-archive", str(priv_num), "--owner", owner, "--id", item_id]
     try:
         found = None
         for _attempt in range(5):
@@ -633,11 +634,14 @@ def _smoke_draft_edit(priv_num: int, owner: str, *, apply: bool) -> None:
         if not draft_id.startswith("DI_"):
             raise SyncError("Smoke test failed: DraftIssue content.id (DI_...) not available from item-list")
         _run_checked(["gh", "project", "item-edit", "--id", draft_id, "--title", title, "--body", "ok2"])
-    finally:
+    except Exception as exc:
         try:
-            _run_checked(["gh", "project", "item-archive", str(priv_num), "--owner", owner, "--id", item_id])
-        except Exception:
-            pass
+            _run_checked(archive_cmd)
+        except Exception as arch_exc:
+            raise SyncError(f"Smoke test failed and could not archive smoke item: {arch_exc}") from exc
+        raise
+    else:
+        _run_checked(archive_cmd)
 
 
 def _load_state(repo_root: Path) -> dict[str, dict[str, str]]:
