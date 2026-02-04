@@ -1,7 +1,8 @@
 # GPU Objective + Stability/Metrics Contract v1
 
 Contract ID: `objective_contract_v1`
-Path: `docs/gpu/objective_contract_v1.md`
+Path (relative to `Golden Draft/`): `docs/gpu/objective_contract_v1.md`
+Repo path: `Golden Draft/docs/gpu/objective_contract_v1.md`
 
 This contract defines what a **valid GPU capacity/throughput run** is and the
 minimum artifacts and metrics required to compare results. All GPU runs should
@@ -124,7 +125,10 @@ Minimum artifact set (per run):
 ## E) CLI Interface Contract (minimal)
 
 The **probe harness `--help` must reference this contract**:
-`docs/gpu/objective_contract_v1.md`
+`docs/gpu/objective_contract_v1.md` (relative to `Golden Draft/`)
+
+Repo path (for humans/tools from repo root):
+`Golden Draft/docs/gpu/objective_contract_v1.md`
 
 The full CLI implementation is **out of scope** for this contract and will be
 implemented in VRA‑32.
@@ -142,7 +146,7 @@ implemented in VRA‑32.
 
 ## G) Acceptance Checklist (VRA‑30)
 
-- `docs/gpu/objective_contract_v1.md` exists.
+- `Golden Draft/docs/gpu/objective_contract_v1.md` exists.
 - Doc includes objective metric, stability gates, artifact schema, and examples.
 - Probe harness `--help` references this contract path.
 - Future GPU runs reference this contract (no random baselines).
