@@ -48,6 +48,7 @@ PRIVATE_ARCHIVE_TITLE = "VRAXION Archive (Internal)"
 PUBLIC_ROADMAP_TITLE = "VRAXION Roadmap"
 
 STATE_FILE = ".vrx_sync_state.json"
+PROJECT_ITEM_DISCOVERY_LIMIT = 5000
 
 
 class SyncError(RuntimeError):
@@ -490,9 +491,18 @@ def _field_map(project_num: int, owner: str) -> dict[str, dict[str, Any]]:
     return {str(f.get("name")): f for f in fields}
 
 
-def _item_list(project_num: int, owner: str, *, limit: int = 500) -> list[dict[str, Any]]:
-    obj = gh_json(["gh", "project", "item-list", str(project_num), "--owner", owner, "--format", "json", "-L", str(limit)])
-    return obj.get("items") or []
+def _item_list(project_num: int, owner: str, *, limit: int = PROJECT_ITEM_DISCOVERY_LIMIT) -> list[dict[str, Any]]:
+    obj = gh_json(
+        ["gh", "project", "item-list", str(project_num), "--owner", owner, "--format", "json", "-L", str(limit)]
+    )
+    items = obj.get("items") or []
+    # We can't know the total item count from gh output, but hitting the limit is a strong truncation signal.
+    if len(items) >= limit:
+        raise SyncError(
+            f"Project item-list hit limit (limit={limit}). Refusing to proceed to avoid missed mirrors/duplicates. "
+            "Increase PROJECT_ITEM_DISCOVERY_LIMIT or implement pagination (gh api graphql)."
+        )
+    return items
 
 
 def _ci_get(item: Mapping[str, Any], name: str) -> Any:
@@ -715,7 +725,7 @@ def cmd_sync(args: argparse.Namespace) -> int:
     if "VRX Linear Key" not in fields:
         raise SyncError("Private archive project missing required field: 'VRX Linear Key'")
 
-    items = _item_list(priv_num, owner, limit=500)
+    items = _item_list(priv_num, owner)
     mirrors = _mirror_items_by_key(items, "VRX Linear Key")
     dup = {k: v for k, v in mirrors.items() if len(v) > 1}
     if dup:
@@ -809,7 +819,7 @@ def cmd_sync(args: argparse.Namespace) -> int:
             )
             item_id = str(item["id"])
             # Re-list items so we can get the DraftIssue content ID for future edits.
-            items = _item_list(priv_num, owner, limit=500)
+            items = _item_list(priv_num, owner)
             mirrors = _mirror_items_by_key(items, "VRX Linear Key")
         else:
             it = mirror[0]
@@ -973,7 +983,7 @@ def cmd_prune_pr_items(args: argparse.Namespace) -> int:
     priv = _project_by_title(owner, PRIVATE_ARCHIVE_TITLE)
     priv_num = int(priv["number"])
 
-    items = _item_list(priv_num, owner, limit=500)
+    items = _item_list(priv_num, owner)
     mirrors = _mirror_items_by_key(items, "VRX Linear Key")
     dup = {k: v for k, v in mirrors.items() if len(v) > 1}
     if dup:
@@ -1056,7 +1066,7 @@ def cmd_promote(args: argparse.Namespace) -> int:
     priv = _project_by_title(owner, PRIVATE_ARCHIVE_TITLE)
     priv_num = int(priv["number"])
 
-    items = _item_list(priv_num, owner, limit=500)
+    items = _item_list(priv_num, owner)
     mirrors = _mirror_items_by_key(items, "VRX Linear Key")
     dup = {k: v for k, v in mirrors.items() if len(v) > 1}
     if dup:
