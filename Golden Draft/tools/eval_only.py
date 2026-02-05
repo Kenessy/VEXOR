@@ -128,9 +128,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     try:
         import torch
+        from vraxion.instnct import absolute_hallway as hallway_mod
         from vraxion.instnct.absolute_hallway import AbsoluteHallway
         from vraxion.instnct import infra
         from vraxion.instnct import modular_checkpoint as mckpt
+        from vraxion.instnct import seed as seed_mod
         from vraxion.settings import load_settings
 
         from tools import instnct_data, instnct_eval
@@ -152,6 +154,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         # Keep infra in sync with settings-driven paths.
         infra.ROOT = str(cfg.root)
         infra.LOG_PATH = str(cfg.log_path)
+
+        moddir_pre = mckpt._resolve_modular_resume_dir(str(ckppth))
+        if moddir_pre:
+            seed_mod._maybe_override_expert_heads(str(moddir_pre))
+        hallway_mod.EXPERT_HEADS = int(seed_mod.EXPERT_HEADS)
 
         # Build a deterministic eval loader. For now we always use a subset
         # of the training dataset (no torchvision requirement).
