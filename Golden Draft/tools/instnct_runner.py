@@ -213,6 +213,9 @@ def main(*, ctx: Optional[InstnctRunnerContext] = None) -> None:
     ctx.set_seed(ctx.seed)
     if ctx.resume:
         ctx.maybe_override_expert_heads(os.path.abspath(ctx.checkpoint_path))
+        from vraxion.instnct import absolute_hallway, seed as seed_mod
+
+        absolute_hallway.EXPERT_HEADS = int(seed_mod.EXPERT_HEADS)
 
     # Reduce kernel search overhead / variance.
     try:
@@ -351,13 +354,14 @@ def default_context() -> InstnctRunnerContext:
             continue
 
     from vraxion.settings import load_settings
-    from vraxion.instnct import infra
+    from vraxion.instnct import absolute_hallway, infra, seed as seed_mod
     from vraxion.instnct.absolute_hallway import AbsoluteHallway
     from vraxion.instnct.seed import _maybe_override_expert_heads, set_seed
 
     from . import instnct_data, instnct_eval, instnct_train_steps, instnct_train_wallclock
 
     cfg = load_settings()
+    absolute_hallway.EXPERT_HEADS = int(seed_mod.EXPERT_HEADS)
 
     # Keep infra in sync with settings-driven paths.
     infra.ROOT = str(cfg.root)
