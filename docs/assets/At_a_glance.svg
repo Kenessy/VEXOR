@@ -9,15 +9,11 @@
   </desc>
 
   <!--
-    VRAXION — AT A GLANCE (PRODUCTION V26)
-    Requested changes addressed:
-      ✅ Pillar 1: simpler + bigger + “same style language as Pillar 2” (clean neon underlay + flowing dash).
-         Removed the box-y feel; now it’s a large loop + boundary ring in cyan.
-      ✅ Titles: single-line where feasible AND centered; feels less “squished”.
-      ✅ Text block uses expanded space: moved down slightly + increased body line spacing (22px) + slightly larger body font.
-      ✅ Pillar 3: more vibrant + more visible uncertainty band (cyan+magenta blurred band + brighter crisp trace).
-      ✅ Pillar 3 scanline: robust visibility using animated x on a gradient bar (not thin line).
-      ✅ Pillar 2 kept essentially unchanged (you said it’s perfect) — only layout text alignment updated.
+    VRAXION — AT A GLANCE (PRODUCTION V27)
+    Last polish (per your note):
+      ✅ Alignment consistency: panel titles are now LEFT-aligned to match the body copy.
+         (No more “center title + left paragraph” mismatch.)
+    Everything else preserved from V26.
   -->
 
   <defs>
@@ -126,12 +122,10 @@
       PILLAR 01
     </text>
 
-    <!-- Graphic: larger, cleaner, “same design language” -->
+    <!-- Graphic -->
     <g transform="translate(200,198)" shape-rendering="geometricPrecision">
-      <!-- ambient halo -->
       <circle r="74" fill="#00F0FF" opacity="0.014"/>
 
-      <!-- boundary ring -->
       <circle r="58" fill="none" stroke="#1A2130" stroke-width="2"/>
       <circle r="58" fill="none" stroke="#00F0FF" stroke-width="3.2"
               stroke-dasharray="64 230" stroke-linecap="round" opacity="0.55"
@@ -141,7 +135,6 @@
                           dur="16s" repeatCount="indefinite"/>
       </circle>
 
-      <!-- loop underlay (soft) -->
       <path d="M -44 0
                C -44 -30 -12 -30 0 0
                C 12 30 44 30 44 0
@@ -151,7 +144,6 @@
             opacity="0.10" filter="url(#glow_cyan)"
             stroke-linecap="round" stroke-linejoin="round"/>
 
-      <!-- loop (flowing dash) -->
       <path d="M -44 0
                C -44 -30 -12 -30 0 0
                C 12 30 44 30 44 0
@@ -164,21 +156,20 @@
         <animate attributeName="stroke-dashoffset" values="0;-148" dur="6.2s" repeatCount="indefinite"/>
       </path>
 
-      <!-- core state -->
       <circle r="10" fill="#00F0FF" opacity="0.78" filter="url(#glow_cyan)">
         <animate attributeName="opacity" values="0.55;1;0.55" dur="4.6s" repeatCount="indefinite"/>
       </circle>
     </g>
 
-    <!-- Title: single line, centered -->
-    <text x="200" y="352" text-anchor="middle"
+    <!-- Title (LEFT aligned to match body) -->
+    <text x="40" y="352"
           font-family="'Segoe UI', system-ui, -apple-system, sans-serif"
           font-size="15.2" font-weight="800"
           fill="#00F0FF" letter-spacing="0.6" filter="url(#glow_cyan)">
       RECURSIVE LATENT REFINEMENT
     </text>
 
-    <!-- Body: slightly larger + more line spacing + moved down -->
+    <!-- Body -->
     <text x="40" y="392"
           font-family="'Segoe UI', system-ui, -apple-system, sans-serif"
           font-size="15" fill="#A0AEC0">
@@ -205,11 +196,10 @@
       PILLAR 02
     </text>
 
-    <!-- Graphic (kept as-is, “perfect”) -->
+    <!-- Graphic -->
     <g transform="translate(600,198)" shape-rendering="geometricPrecision">
       <circle r="64" fill="#FF00FF" opacity="0.016"/>
 
-      <!-- input rays -->
       <line x1="-84" y1="-28" x2="-24" y2="-12"
             stroke="#FF00FF" stroke-width="7" opacity="0.06"
             stroke-linecap="round" filter="url(#glow_magenta)"/>
@@ -236,7 +226,6 @@
         <animate attributeName="stroke-dashoffset" values="0;68" dur="5.2s" repeatCount="indefinite"/>
       </line>
 
-      <!-- prism -->
       <path d="M -24 -42 L 46 0 L -24 42 Z"
             fill="url(#prism_glass)" stroke="#FF00FF"
             stroke-width="3.0" stroke-linejoin="round"
@@ -256,7 +245,6 @@
         <animate attributeName="stroke-dashoffset" values="0;56" dur="4.8s" repeatCount="indefinite"/>
       </path>
 
-      <!-- output beam -->
       <rect x="46" y="-3" width="96" height="6" rx="3"
             fill="url(#beam_grad)" filter="url(#glow_magenta)" opacity="0.90">
         <animate attributeName="opacity" values="0.70;0.98;0.70" dur="4.0s" repeatCount="indefinite"/>
@@ -273,8 +261,8 @@
       </circle>
     </g>
 
-    <!-- Title: single line, centered -->
-    <text x="600" y="352" text-anchor="middle"
+    <!-- Title (LEFT aligned to match body) -->
+    <text x="440" y="352"
           font-family="'Segoe UI', system-ui, -apple-system, sans-serif"
           font-size="15.2" font-weight="800"
           fill="#FF00FF" letter-spacing="0.6" filter="url(#glow_magenta)">
@@ -311,7 +299,7 @@
     <g transform="translate(1000,198)" shape-rendering="geometricPrecision">
       <circle r="64" fill="#00F0FF" opacity="0.018"/>
 
-      <!-- Probability band (more vibrant + visible) -->
+      <!-- Probability band -->
       <path d="M -84 0 Q -64 -18 -44 0 T -4 0 T 36 0 T 76 0"
             fill="none" stroke="#00F0FF" stroke-width="14"
             opacity="0.18" filter="url(#blur_only)">
@@ -323,7 +311,7 @@
         <animate attributeName="opacity" values="0.08;0.14;0.08" dur="6.8s" repeatCount="indefinite"/>
       </path>
 
-      <!-- Crisp external trace (brighter) -->
+      <!-- Crisp external trace -->
       <path d="M -84 0 Q -64 -18 -44 0 T -4 0 T 36 0 T 76 0"
             fill="none" stroke="#475569" stroke-width="2.6"
             stroke-linecap="round" opacity="0.62"
@@ -354,7 +342,7 @@
         <animate attributeName="opacity" values="0.22;0.46;0.22" dur="5.8s" repeatCount="indefinite"/>
       </path>
 
-      <!-- Scanline (robust): animated x on bar + animated x on center line -->
+      <!-- Scanline -->
       <rect x="-26" y="-36" width="18" height="72" rx="9"
             fill="url(#scan_grad)" opacity="0.65" filter="url(#glow_magenta)">
         <animate attributeName="x" values="-26;8;-26" dur="5.2s" repeatCount="indefinite"/>
@@ -367,8 +355,8 @@
       </rect>
     </g>
 
-    <!-- Title: single line, centered -->
-    <text x="1000" y="352" text-anchor="middle"
+    <!-- Title (LEFT aligned to match body) -->
+    <text x="840" y="352"
           font-family="'Segoe UI', system-ui, -apple-system, sans-serif"
           font-size="15.2" font-weight="800"
           fill="#FFFFFF" letter-spacing="0.6">
