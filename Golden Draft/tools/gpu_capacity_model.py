@@ -75,6 +75,12 @@ class CapacityCombo:
 
 
 @dataclass(frozen=True)
+class RuntimeContext:
+    total_vram_bytes: int
+    gpu_name: Optional[str]
+
+
+@dataclass(frozen=True)
 class CapacityModelV1:
     guard_basis: str
     guard_ratio: float
@@ -217,6 +223,49 @@ def load_capacity_model(path: str | Path) -> CapacityModelV1:
     )
 
 
+def load_runtime_context_from_env_json(path: str | Path) -> RuntimeContext:
+    """Load runtime VRAM/GPU metadata from probe-style env.json."""
+
+    pth = Path(path)
+    data = json.loads(pth.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise CapacityModelError(f"runtime env json must be an object: {pth}")
+    total_vram = _as_int("runtime.total_vram_bytes", _req(data, "total_vram_bytes"))
+    gpu_name = data.get("gpu_name")
+    return RuntimeContext(
+        total_vram_bytes=int(total_vram),
+        gpu_name=None if gpu_name is None else str(gpu_name),
+    )
+
+
+def runtime_compatibility_issues(
+    model: CapacityModelV1,
+    *,
+    runtime_total_vram_bytes: int,
+    runtime_gpu_name: Optional[str] = None,
+) -> list[str]:
+    """Return explicit compatibility mismatches against calibration metadata."""
+
+    issues: list[str] = []
+    cal_tvb = model.calibrated_on.get("total_vram_bytes")
+    if cal_tvb is not None:
+        cal_vram = _as_int("calibrated_on.total_vram_bytes", cal_tvb)
+        if int(cal_vram) != int(runtime_total_vram_bytes):
+            issues.append(
+                "runtime total_vram_bytes mismatch: "
+                f"calibrated={cal_vram}, runtime={int(runtime_total_vram_bytes)}"
+            )
+
+    cal_gpu = model.calibrated_on.get("gpu_name")
+    if cal_gpu is not None and runtime_gpu_name is not None:
+        left = str(cal_gpu).strip().lower()
+        right = str(runtime_gpu_name).strip().lower()
+        if left and right and left != right:
+            issues.append(f"runtime gpu_name mismatch: calibrated='{cal_gpu}', runtime='{runtime_gpu_name}'")
+
+    return issues
+
+
 def compute_combo_key_from_workload_files(
     ant_path: str | Path,
     colony_path: str | Path,
@@ -254,9 +303,34 @@ def estimate_safe_start_and_max(
     model_path: str | Path,
     guard_ratio: Optional[float] = None,
     total_vram_bytes: Optional[int] = None,
+    env_json_path: Optional[str | Path] = None,
+    allow_gpu_mismatch: bool = False,
 ) -> tuple[int, int]:
     model = load_capacity_model(model_path)
     model.assert_track_compatible(out_dim=model.track.out_dim)
+
+    runtime_gpu_name: Optional[str] = None
+    runtime_total_vram: Optional[int] = None if total_vram_bytes is None else int(total_vram_bytes)
+    if env_json_path is not None:
+        runtime = load_runtime_context_from_env_json(env_json_path)
+        runtime_gpu_name = runtime.gpu_name
+        if runtime_total_vram is None:
+            runtime_total_vram = int(runtime.total_vram_bytes)
+
+    if runtime_total_vram is None:
+        raise CapacityModelError("runtime VRAM is required: pass --total-vram-bytes or --env-json")
+
+    issues = runtime_compatibility_issues(
+        model,
+        runtime_total_vram_bytes=int(runtime_total_vram),
+        runtime_gpu_name=runtime_gpu_name,
+    )
+    if issues and not allow_gpu_mismatch:
+        joined = "; ".join(issues)
+        raise CapacityModelError(
+            "calibration/runtime mismatch: "
+            f"{joined}. Re-run with --allow-gpu-mismatch only if this is intentional."
+        )
 
     _, combo_key = compute_combo_key_from_workload_files(
         ant_path,
@@ -264,6 +338,6 @@ def estimate_safe_start_and_max(
         precision_override=model.track.precision,
     )
     gr = float(model.guard_ratio if guard_ratio is None else guard_ratio)
-    max_b = model.estimate_max_batch(combo_key, guard_ratio=gr, total_vram_bytes=total_vram_bytes)
-    safe_b = model.estimate_safe_start_batch(combo_key, total_vram_bytes=total_vram_bytes)
+    max_b = model.estimate_max_batch(combo_key, guard_ratio=gr, total_vram_bytes=runtime_total_vram)
+    safe_b = model.estimate_safe_start_batch(combo_key, total_vram_bytes=runtime_total_vram)
     return safe_b, max_b

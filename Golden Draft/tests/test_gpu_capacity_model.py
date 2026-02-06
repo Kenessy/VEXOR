@@ -51,3 +51,83 @@ class TestGpuCapacityModel(unittest.TestCase):
             with self.assertRaises(gpu_capacity_model.CapacityModelError):
                 m.assert_track_compatible(out_dim=2)
 
+    def test_strict_runtime_requirements_and_mismatch_override(self) -> None:
+        ant_spec = {
+            "schema_version": "workload_schema_v1",
+            "ant_spec": {"ring_len": 32, "slot_dim": 16, "ptr_dtype": "fp64", "precision": "fp32"},
+            "colony_spec": {
+                "seq_len": 8,
+                "synth_len": 8,
+                "batch_size": 4,
+                "ptr_update_every": 1,
+                "state_loop_samples": 0,
+            },
+        }
+        colony_spec = {
+            "schema_version": "workload_schema_v1",
+            "ant_spec": {"ring_len": 64, "slot_dim": 32, "ptr_dtype": "fp64", "precision": "fp32"},
+            "colony_spec": {
+                "seq_len": 8,
+                "synth_len": 8,
+                "batch_size": 16,
+                "ptr_update_every": 1,
+                "state_loop_samples": 0,
+            },
+        }
+
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            ant_path = tmp / "ant.json"
+            colony_path = tmp / "colony.json"
+            ant_path.write_text(json.dumps(ant_spec, indent=2) + "\n", encoding="utf-8")
+            colony_path.write_text(json.dumps(colony_spec, indent=2) + "\n", encoding="utf-8")
+
+            _, combo_key = gpu_capacity_model.compute_combo_key_from_workload_files(
+                ant_path, colony_path, precision_override="fp16"
+            )
+
+            model = {
+                "schema_version": "capacity_model_v1",
+                "guard_basis": "reserved",
+                "guard_ratio": 0.92,
+                "safe_start_ratio": 0.85,
+                "track": {"out_dim": 1, "precision": "fp16", "amp": 1},
+                "calibrated_on": {"gpu_name": "GPU_A", "total_vram_bytes": 1000},
+                "overhead_bytes": 5,
+                "combos": [
+                    {
+                        "combo_name": "CX",
+                        "combo_key": combo_key,
+                        "combo_spec_no_batch": {},
+                        "base_alloc_bytes": 100,
+                        "per_batch_alloc_bytes": 10,
+                        "measured_max_batch": None,
+                    }
+                ],
+            }
+            model_path = tmp / "m.json"
+            model_path.write_text(json.dumps(model, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            with self.assertRaises(gpu_capacity_model.CapacityModelError):
+                gpu_capacity_model.estimate_safe_start_and_max(
+                    ant_path=ant_path,
+                    colony_path=colony_path,
+                    model_path=model_path,
+                )
+
+            with self.assertRaises(gpu_capacity_model.CapacityModelError):
+                gpu_capacity_model.estimate_safe_start_and_max(
+                    ant_path=ant_path,
+                    colony_path=colony_path,
+                    model_path=model_path,
+                    total_vram_bytes=900,
+                )
+
+            safe_b, max_b = gpu_capacity_model.estimate_safe_start_and_max(
+                ant_path=ant_path,
+                colony_path=colony_path,
+                model_path=model_path,
+                total_vram_bytes=900,
+                allow_gpu_mismatch=True,
+            )
+            self.assertLessEqual(safe_b, max_b)
