@@ -1,5 +1,7 @@
 # VRAXION Golden Targets
 
+[![RESEARCH](docs/assets/badges/mono/research.svg)](https://github.com/VRAXION/VRAXION/wiki/Hypotheses) [![NONCOMMERCIAL](docs/assets/badges/mono/noncommercial.svg)](LICENSE) [![DOI 10.5281/zenodo.18332532](docs/assets/badges/mono/doi_10_5281_zenodo_18332532.svg)](https://doi.org/10.5281/zenodo.18332532) [![WIKI](docs/assets/badges/mono/wiki.svg)](https://github.com/VRAXION/VRAXION/wiki) [![CANONICAL](docs/assets/badges/mono/canonical.svg)](https://github.com/VRAXION/VRAXION/wiki/Wiki-Policy---Wiki-Is-Canonical-(v1))
+
 VRAXION is a research codebase centered on **repeatable internal mechanisms** (loops/recurrence) and **instrumented evaluation** (so performance claims come with artifacts, not vibes).
 
 This repo root contains two curated targets:
@@ -10,17 +12,17 @@ This repo root contains two curated targets:
 
 ## Status
 
-Research preview. Chapter #1 work (GPU limiter / probe harness / VRAM accounting) is active, so expect iteration and occasional breaking changes.
+Research preview. Expect iteration and occasional breaking changes. Current status lives in the Roadmap and Releases.
 
 ## Where to look
 
-- Pages (landing): https://kenessy.github.io/VRAXION/
-- Wiki (deep dives): https://github.com/Kenessy/VRAXION/wiki
+- Pages (landing): https://vraxion.github.io/VRAXION/
+- Wiki (deep dives): https://github.com/VRAXION/VRAXION/wiki
 - Quickstart (local dev): `Golden Draft/docs/ops/quickstart_v1.md`
 - Reproducibility checklist: `Golden Draft/docs/ops/reproducibility_v1.md`
 - GPU objective/stability contract: `Golden Draft/docs/gpu/objective_contract_v1.md`
-- Roadmap (public): https://github.com/users/Kenessy/projects/4
-- Releases (public proof): https://github.com/Kenessy/VRAXION/releases
+- Roadmap (public): https://github.com/orgs/VRAXION/projects/4
+- Releases (public proof): https://github.com/VRAXION/VRAXION/releases
 
 ## Quickstart (safe commands)
 
