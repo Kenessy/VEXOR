@@ -399,6 +399,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         ring_len, slot_dim = _ant_shape_for_tier(tier)
         steps = tb.steps_for_batch(int(batch))
         assoc_dir = out_root / "runs_assoc" / cfg_tag / f"seed{int(args.cap_seed)}"
+        # Guarantee at least one checkpoint write for bounded smoke runs where
+        # capability steps can be lower than the default save cadence.
+        save_every = max(1, min(int(args.cap_save_every), int(steps)))
         ckpt = _run_capability_train(
             repo_root=repo_root,
             run_root=assoc_dir,
@@ -418,7 +421,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             eval_samples=int(args.cap_eval_samples),
             ptr_dtype=str(args.cap_ptr_dtype),
             offline_only=bool(args.cap_offline_only),
-            save_every=int(args.cap_save_every),
+            save_every=int(save_every),
         )
         _run_capability_eval(
             repo_root=repo_root,
