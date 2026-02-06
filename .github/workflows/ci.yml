@@ -67,3 +67,7 @@ jobs:
       - name: Badges health check
         run: |
           python "Golden Draft/tools/badges_health_check.py"
+
+      - name: Badge generation check (v2)
+        run: |
+          python "Golden Draft/tools/generate_badges_v2.py" --check-only

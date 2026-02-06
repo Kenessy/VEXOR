@@ -1,6 +1,6 @@
 # VRAXION Golden Targets
 
-[![RESEARCH](docs/assets/badges/mono/research.svg)](https://github.com/VRAXION/VRAXION/wiki/Hypotheses) [![NONCOMMERCIAL](docs/assets/badges/mono/noncommercial.svg)](LICENSE) [![DOI 10.5281/zenodo.18332532](docs/assets/badges/mono/doi_10_5281_zenodo_18332532.svg)](https://doi.org/10.5281/zenodo.18332532) [![WIKI](docs/assets/badges/mono/wiki.svg)](https://github.com/VRAXION/VRAXION/wiki) [![CANONICAL](docs/assets/badges/mono/canonical.svg)](https://github.com/VRAXION/VRAXION/wiki/Wiki-Policy---Wiki-Is-Canonical-(v1))
+[![RESEARCH](docs/assets/badges/v2/research.svg)](https://github.com/VRAXION/VRAXION/wiki/Hypotheses) [![NONCOMMERCIAL](docs/assets/badges/v2/noncommercial.svg)](LICENSE) [![DOI 10.5281/zenodo.18332532](docs/assets/badges/v2/doi_10_5281_zenodo_18332532.svg)](https://doi.org/10.5281/zenodo.18332532) [![WIKI](docs/assets/badges/v2/wiki.svg)](https://github.com/VRAXION/VRAXION/wiki) [![CANONICAL](docs/assets/badges/v2/canonical.svg)](https://github.com/VRAXION/VRAXION/wiki/Wiki-Policy---Wiki-Is-Canonical-(v1))
 
 VRAXION is a research codebase centered on **repeatable internal mechanisms** (loops/recurrence) and **instrumented evaluation** (so performance claims come with artifacts, not vibes).
 

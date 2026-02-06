@@ -134,6 +134,44 @@ def _check_home_locked(wiki_root: Path) -> list[Finding]:
             )
         )
 
+    # Home is intentionally timeless: ban workflow/epistemic "state" badges here.
+    banned_state_badge_ids = [
+        "hypothesis",
+        "supported",
+        "confirmed",
+        "law",
+        "disproven",
+        "in_progress",
+        "blocked",
+        "parked",
+        "wip",
+        "m0",
+        "m1",
+        "m2",
+        "m3",
+        "m4",
+        "e0",
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+    ]
+    home_lines = text.splitlines()
+    for bid in banned_state_badge_ids:
+        needle = f"{bid}.svg"
+        for idx, line in enumerate(home_lines, start=1):
+            if needle in line:
+                findings.append(
+                    Finding(
+                        kind="home_lock",
+                        file=str(home),
+                        line=idx,
+                        message=f"Home must not use state badge: {needle}",
+                    )
+                )
+                break
+
     return findings
 
 

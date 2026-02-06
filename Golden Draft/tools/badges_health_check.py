@@ -3,10 +3,12 @@
 VRAXION Badge Health Check (deterministic, stdlib-only)
 
 Validates the repo-hosted SVG label/badge library under:
-  docs/assets/badges/{mono,neon}/*.svg
+  docs/assets/badges/v2/*.svg (canonical)
+  docs/assets/badges/{mono,neon}/*.svg (compat copies; byte-identical to v2)
 
 Guards against:
-- missing badge files (both themes)
+- missing badge files
+- compat drift (mono/neon must match v2 exactly)
 - unsafe SVG features (scripts, external hrefs)
 - spec drift (height/viewBox, missing title/desc/accessibility metadata)
 """
@@ -20,7 +22,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-THEMES = ("mono", "neon")
 BADGE_IDS = (
     # Governance / doc-type
     "canonical",
@@ -55,6 +56,28 @@ BADGE_IDS = (
     # Provenance / license
     "doi_10_5281_zenodo_18332532",
     "noncommercial",
+    # Epistemic / workflow
+    "hypothesis",
+    "supported",
+    "confirmed",
+    "law",
+    "disproven",
+    "in_progress",
+    "blocked",
+    "parked",
+    # Chips (maturity)
+    "m0",
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    # Chips (evidence)
+    "e0",
+    "e1",
+    "e2",
+    "e3",
+    "e4",
+    "e5",
 )
 
 EXTERNAL_HREF_RE = re.compile(r"""(?:xlink:)?href\s*=\s*["']https?://""", re.IGNORECASE)
@@ -156,22 +179,69 @@ def _check_svg(path: Path) -> list[Issue]:
 def main(argv: list[str]) -> int:
     repo_root = Path(__file__).resolve().parents[2]
     badges_root = repo_root / "docs" / "assets" / "badges"
+    v2_dir = badges_root / "v2"
+    compat_dirs = (badges_root / "mono", badges_root / "neon")
 
     issues: list[Issue] = []
+    expected_set = set(BADGE_IDS)
 
-    # 1) Existence check (expected library completeness)
-    for theme in THEMES:
-        for badge_id in BADGE_IDS:
-            p = badges_root / theme / f"{badge_id}.svg"
-            if not p.exists():
-                issues.append(Issue(kind="missing_file", file=str(p), message="Missing badge file"))
+    # 1) Existence check (canonical)
+    for badge_id in BADGE_IDS:
+        p = v2_dir / f"{badge_id}.svg"
+        if not p.exists():
+            issues.append(Issue(kind="missing_file", file=str(p), message="Missing v2 badge file"))
 
-    # 2) Spec/safety check (all files in expected set)
-    for theme in THEMES:
+    # No unexpected extras in v2/
+    if v2_dir.exists():
+        v2_ids = {p.stem for p in v2_dir.glob("*.svg") if p.is_file()}
+        extra_v2 = sorted(v2_ids - expected_set)
+        if extra_v2:
+            issues.append(
+                Issue(
+                    kind="extra_files",
+                    file=str(v2_dir),
+                    message=f"Unexpected badge IDs: {extra_v2}",
+                )
+            )
+
+    # 2) Spec/safety check (canonical only)
+    for badge_id in BADGE_IDS:
+        p = v2_dir / f"{badge_id}.svg"
+        if p.exists():
+            issues.extend(_check_svg(p))
+
+    # 3) Compat dirs must be byte-identical copies of v2 (per badge)
+    for compat_dir in compat_dirs:
+        if not compat_dir.exists():
+            issues.append(Issue(kind="missing_dir", file=str(compat_dir), message="Missing compat badge dir"))
+            continue
+
+        compat_ids = {p.stem for p in compat_dir.glob("*.svg") if p.is_file()}
+        extra = sorted(compat_ids - expected_set)
+        if extra:
+            issues.append(
+                Issue(
+                    kind="extra_files",
+                    file=str(compat_dir),
+                    message=f"Unexpected badge IDs: {extra}",
+                )
+            )
+
         for badge_id in BADGE_IDS:
-            p = badges_root / theme / f"{badge_id}.svg"
-            if p.exists():
-                issues.extend(_check_svg(p))
+            src = v2_dir / f"{badge_id}.svg"
+            dst = compat_dir / f"{badge_id}.svg"
+            if not dst.exists():
+                issues.append(Issue(kind="missing_file", file=str(dst), message="Missing compat badge file"))
+                continue
+            if src.exists():
+                if src.read_bytes() != dst.read_bytes():
+                    issues.append(
+                        Issue(
+                            kind="compat_mismatch",
+                            file=str(dst),
+                            message="Compat badge differs from v2 (expected byte-identical copy)",
+                        )
+                    )
 
     if issues:
         print("\nBADGES HEALTH CHECK FAILURES:")
@@ -184,11 +254,9 @@ def main(argv: list[str]) -> int:
     print("\nSUMMARY:")
     print("- issues: 0")
     print(f"- badge_ids: {len(BADGE_IDS)}")
-    print(f"- themes: {len(THEMES)}")
-    print(f"- total_expected_files: {len(BADGE_IDS) * len(THEMES)}")
+    print(f"- total_expected_files: {len(BADGE_IDS) * 3} (v2 + mono + neon)")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
-
